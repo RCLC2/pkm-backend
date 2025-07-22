@@ -1,0 +1,87 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: document_route
+          uri: http://document-service:8080
+          predicates:
+            - Path=/api/documents/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: documentServiceCircuitBreaker
+                fallbackUri: forward:/fallbackDocumentService
+            - name: Retry
+              args:
+                retries: 3
+                statuses:
+                  - BAD_GATEWAY
+                  - SERVICE_UNAVAILABLE
+                  - GATEWAY_TIMEOUT
+
+        - id: graph_route
+          uri: http://graph-service:8080
+          predicates:
+            - Path=/api/links/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: graphServiceCircuitBreaker
+                fallbackUri: forward:/fallbackGraphService
+
+        - id: user_route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/user/**
+          filters:
+            - StripPrefix=1
+            - Logging
+            - JwtAuthentication=publicPaths:/user/login,/user/register
+
+jwt:
+  secret: s3fijijfoisjdf90203jfsefjsifjpaidj32jdfka
+
+circuitbreaker:
+  configs:
+    default:
+      failureRateThreshold: 50 # 실패율이 50%를 초과하면 서킷 오픈 시도
+      slidingWindowType: COUNT_BASED # 슬라이딩 윈도우 타입 (COUNT_BASED or TIME_BASED)
+      slidingWindowSize: 10 # 슬라이딩 윈도우 크기 (요청 10개)
+      minimumNumberOfCalls: 5 # 최소 호출 횟수 (이 횟수 이상이어야 서킷 상태 변경 고려)
+      permittedNumberOfCallsInHalfOpenState: 3 # HALF_OPEN 상태에서 허용될 호출 횟수
+      waitDurationInOpenState: 5s # OPEN 상태 유지 시간 (5초)
+      recordExceptions:
+        - java.io.IOException
+        - java.util.concurrent.TimeoutException
+
+    documentServiceCircuitBreaker:
+      failureRateThreshold: 60
+      slidingWindowSize: 20
+      waitDurationInOpenState: 10s
+
+    graphServiceCircuitBreaker:
+      failureRateThreshold: 70
+      slidingWindowSize: 15
+      waitDurationInOpenState: 7s
+
+timelimiter:
+  configs:
+    default:
+      timeoutDuration: 2s
+
+    documentServiceTimeLimiter:
+      timeoutDuration: 3s
+
+    graphServiceTimeLimiter:
+      timeoutDuration: 1s
