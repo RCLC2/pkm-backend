@@ -9,6 +9,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.server.RequestPath;
 import org.springframework.stereotype.Component;
+
+import com.ns.gateway.LogState;
+
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -22,7 +25,7 @@ public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<Lo
 
     @Override
     public GatewayFilter apply(Config config) {
-        String curLogLevel = config.getLogLevel() != null ? config.getLogLevel() : "INFO";
+        LogState curLogLevel = config.getLogLevel() != null ? config.getLogLevel() : LogState.INFO;
         String curMessage = config.getCustomMessage() != null ? config.getCustomMessage() : "default";
 
         return (exchange, chain) -> {
@@ -40,7 +43,7 @@ public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<Lo
     @Getter
     @Setter
     public static class Config {
-        private String logLevel; // INFO, WARN, ERROR
+        private LogState logLevel; // INFO, WARN, ERROR
         private String customMessage; // 원하는 메시지
     }
 }
