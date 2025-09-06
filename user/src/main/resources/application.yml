@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: user
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: user
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-exp-minutes: 15
+  refresh-exp-days: 14
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}
+    secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: http://localhost:8080/api/v1/auth/google/callback
+  oauth:
+    token-uri: https://oauth2.googleapis.com/token
+    jwks-uri: https://www.googleapis.com/oauth2/v3/certs
+    issuer: https://accounts.google.com
+
