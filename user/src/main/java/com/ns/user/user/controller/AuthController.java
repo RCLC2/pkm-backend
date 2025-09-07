@@ -1,5 +1,6 @@
 package com.ns.user.user.controller;
 
+import com.ns.user.jwt.CurrentUser;
 import com.ns.user.response.GlobalResponseHandler;
 import com.ns.user.response.ResponseStatus;
 import com.ns.user.user.dto.request.GoogleLoginRequestDto;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -66,9 +68,10 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/logout/{userId}")
-    public ResponseEntity<GlobalResponseHandler<Void>> logout(@PathVariable String userId) {
-        userService.logout(userId);
+    @PostMapping("/logout")
+    public ResponseEntity<GlobalResponseHandler<Void>> logout(
+            @AuthenticationPrincipal CurrentUser currentUser) {
+        userService.logout(currentUser.id());
 
         ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)

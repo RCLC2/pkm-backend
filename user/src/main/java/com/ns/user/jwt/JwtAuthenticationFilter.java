@@ -12,6 +12,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        // 특정 경로는 인증 필터에서 제외
+        if(shouldSkipFilter(request)){
+            filterChain.doFilter(request,response);
+            return;
+        }
+
+
         String token = resolveToken(request);
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
@@ -53,5 +62,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearer.substring(7);
         }
         return null;
+    }
+
+    private boolean shouldSkipFilter(HttpServletRequest request){
+        final List<String> excludedPaths = Arrays.asList(
+                // 인증 관련
+                "/api/v1/member/**",
+                "/api/v1/auth/google/**",
+                "/api/v1/auth/signup",
+                //문서 모니터링
+                "/swagger-ui.html",
+                "/swagger-ui",
+                "/v3/api-docs"
+        );
+
+        String path = request.getRequestURI();
+
+        return excludedPaths.stream()
+                .anyMatch(path::startsWith);
     }
 }
