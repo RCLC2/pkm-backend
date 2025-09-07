@@ -70,7 +70,7 @@ public class UserService {
         String role = jwtProvider.getRole(refreshVo.refreshToken());
 
         String newAccessToken = jwtProvider.generateAccessToken(refreshVo.userId(), email, name, role);
-        return new AuthVo(newAccessToken, refreshVo.refreshToken());
+        return new AuthVo(newAccessToken, null);
     }
 
     public void logout(String userId) {
