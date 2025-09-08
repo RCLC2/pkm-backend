@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class UserEntity{
-
     @Id
     private String id; // Google sub (유일 식별자)
 
