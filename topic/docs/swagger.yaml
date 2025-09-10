@@ -1,0 +1,46 @@
+definitions:
+  handlers.SearchRequest:
+    properties:
+      content:
+        type: string
+      topN:
+        type: integer
+    required:
+    - content
+    type: object
+info:
+  contact: {}
+paths:
+  /api/extract-tags:
+    post:
+      consumes:
+      - application/json
+      description: 문서 내에서 빈도 기반 토큰화, 상위 N개의 태그를 반환
+      parameters:
+      - description: 콘텐츠와 상위 N개 태그 개수(default=10)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SearchRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: 태그 추출
+  /api/find-similar:
+    post:
+      consumes:
+      - application/json
+      description: 문서와 유사한 문서 탐색
+      parameters:
+      - description: 콘텐츠와 상위 N개 문서 개수(default=5)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SearchRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: 유사한 문서 탐색
+swagger: "2.0"

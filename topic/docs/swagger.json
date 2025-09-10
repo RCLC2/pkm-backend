@@ -1,0 +1,72 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/extract-tags": {
+            "post": {
+                "description": "문서 내에서 빈도 기반 토큰화, 상위 N개의 태그를 반환",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "태그 추출",
+                "parameters": [
+                    {
+                        "description": "콘텐츠와 상위 N개 태그 개수(default=10)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SearchRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/find-similar": {
+            "post": {
+                "description": "문서와 유사한 문서 탐색",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "유사한 문서 탐색",
+                "parameters": [
+                    {
+                        "description": "콘텐츠와 상위 N개 문서 개수(default=5)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SearchRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        }
+    },
+    "definitions": {
+        "handlers.SearchRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "topN": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
