@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8082:8082"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    build: ./esclient
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - ES_PLUGINS_INSTALL=analysis-nori
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+      - esplugs:/usr/share/elasticsearch/plugins
+volumes:
+  esdata:
+  esplugs:
