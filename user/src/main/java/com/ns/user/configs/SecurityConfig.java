@@ -31,7 +31,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/google/**", // 로그인/회원가입/콜백
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/actuator/health"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

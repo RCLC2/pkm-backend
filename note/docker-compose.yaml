@@ -1,0 +1,26 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: note-mongo
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: rclc-note
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  note:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: note-app
+    # platform: linux/amd64        # (Mac/ARM에서 리눅스 배포 타겟 테스트 시 켜세요)
+    ports:
+      - "8083:8080"                # http://localhost:8083
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/rclc-note
+    depends_on:
+      - mongo

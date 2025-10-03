@@ -1,0 +1,42 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: user-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: rclc-user
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: user-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  user:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: user-app
+    # platform: linux/amd64        # (Mac/ARM에서 리눅스 배포 타겟 테스트 시 켜세요)
+    ports:
+      - "8081:8080"                # http://localhost:8081
+    env_file:
+      - .env
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/rclc-user
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - mongo
+      - redis
