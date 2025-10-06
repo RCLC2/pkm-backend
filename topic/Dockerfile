@@ -6,13 +6,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /pkm-backend main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /topic main.go
 
 # Stage 2:
 FROM alpine:latest
 
 WORKDIR /root/
-COPY --from=builder /pkm-backend .
+COPY --from=builder /topic .
 EXPOSE 8082
 
-CMD ["./pkm-backend"]
+CMD ["./topic"]
