@@ -7,6 +7,7 @@ import (
 	"graph/models"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,11 +16,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var topicUrl = os.Getenv("TOPIC_SERVICE_URL")
+
 type GraphService struct {
 	db *mongo.Database
 }
 
 func NewGraphService(db *mongo.Database) *GraphService {
+	if topicUrl == "" {
+		topicUrl = "http://localhost:8083/"
+	}
 	return &GraphService{db: db}
 }
 
@@ -53,7 +59,7 @@ func fetchSimilarDocsHTTP(ctx context.Context, content string, topN int) ([]stri
 		"topN":    topN,
 	})
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", "http://localhost:8083/api/find-similar", bytes.NewReader(reqBody))
+	req, _ := http.NewRequestWithContext(ctx, "POST", topicUrl+"/api/find-similar", bytes.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)

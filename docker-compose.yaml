@@ -1,45 +1,6 @@
 version: '3.8'
 
 services:
-  document-service:
-    build:
-      context: ./document
-    container_name: pkm-document
-    ports:
-      - "8081:8080"
-    environment:
-      MONGO_URI: mongodb://mongodb:27017
-      DB_NAME: boardDB
-      COLLECTION_NAME: posts
-      PORT: 8080
-    depends_on:
-      - mongodb
-
-  graph-service:
-    build:
-      context: ./graph
-    container_name: pkm-graph
-    ports:
-      - "8082:8080"
-    environment:
-      MONGO_URI: mongodb://mongodb:27017
-      DB_NAME: boardDB
-      COLLECTION_NAME: posts
-      PORT: 8080
-    depends_on:
-      - mongodb
-
-  api-gateway:
-    build:
-      context: ./gateway
-    container_name: pkm-api-gateway
-    ports:
-      - "8080:8000"
-    depends_on:
-      - document-service
-      - graph-service
-      - mongodb
-
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -48,6 +9,106 @@ services:
     volumes:
       - mongodb_data:/data/db
     restart: always
+    networks:
+      - pkm-network
+
+  user-service:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: user-service
+    environment:
+      - PORT=8001
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/<user_db>
+      - JWT_SECRET=Twoiefjoweijfoiejfoiwjfowijfoawijfowijfpiwjepfiwjepfi
+      - JWT_ACCESS_EXP_MINUTES=
+      - JWT_REFRESH_EXP_DAYS=
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
+      - GOOGLE_CLIENT_REDIRECT_URI=
+      - GOOGLE_OAUTH_TOKEN_URI=
+      - GOOGLE_OAUTH_ISSUER=
+      - GOOGLE_OAUTH_JWKS_URI=
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongodb
+    networks:
+      - pkm-network
+
+  note-service:
+    build:
+      context: ./note
+      dockerfile: Dockerfile
+    container_name: note-service
+    environment:
+      - PORT=8002
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/<note_db>
+      - JWT_SECRET=dsfjwoijefiwjfpiwjdpfijdpvijlvspfijpifjwpeijfpempdifpw
+    ports:
+      - "8002:8002"
+    depends_on:
+      - mongodb
+    networks:
+      - pkm-network
+
+  graph-service:
+    build:
+      context: ./graph
+      dockerfile: Dockerfile
+    container_name: graph-service
+    environment:
+      - PORT=8003
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB_NAME=graphdb
+      - TOPIC_SERVICE_URL=http://topic-service:8004
+    ports:
+      - "8003:8003"
+    depends_on:
+      - mongodb
+    networks:
+      - pkm-network
+
+  topic-service:
+    build:
+      context: ./topic
+      dockerfile: Dockerfile
+    container_name: topic-service
+    environment:
+      - SERVER_PORT=8004
+      - ELASTICSEARCH_ADDR=http://elasticsearch:9200
+      - ELASTICSEARCH_INDEX=topics
+    ports:
+      - "8004:8004"
+    depends_on:
+      - elasticsearch
+    networks:
+      - pkm-network
+
+  elasticsearch:
+    build:
+      context: ./topic/esclient
+      dockerfile: Dockerfile
+    image: pkm-backend-elasticsearch:latest
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - ES_PLUGINS_INSTALL=analysis-nori
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+      - esplugs:/usr/share/elasticsearch/plugins
+    networks:
+      - pkm-network
 
 volumes:
   mongodb_data:
+  esdata:
+  esplugs:
+
+networks:
+  pkm-network:
+    driver: bridge
