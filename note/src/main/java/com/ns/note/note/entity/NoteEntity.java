@@ -9,7 +9,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Document(indexName = "note")
 @Getter
@@ -28,25 +28,25 @@ public class NoteEntity {
     private String contents;
 
     @CreatedDate
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
-    private LocalDateTime createdAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant createdAt;
 
     @LastModifiedDate
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
-    private LocalDateTime updatedAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant updatedAt;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
-    private LocalDateTime deletedAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant deletedAt;
 
     public void update(String title, String description, String contents) {
         this.title = title;
         this.description = description;
         this.contents = contents;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 
     public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = Instant.now();
     }
 
 }
