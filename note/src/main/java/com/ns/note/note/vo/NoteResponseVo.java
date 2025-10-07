@@ -1,7 +1,6 @@
 package com.ns.note.note.vo;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 // 노트 정보 반환 Vo
 public record NoteResponseVo(
@@ -9,16 +8,16 @@ public record NoteResponseVo(
         String title,
         String description,
         String contents,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static NoteResponseVo of(
             String id,
             String title,
             String description,
             String contents,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            Instant createdAt,
+            Instant updatedAt
     ){
         return new NoteResponseVo(
                 id,

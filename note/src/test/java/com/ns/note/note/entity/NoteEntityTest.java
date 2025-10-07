@@ -2,6 +2,7 @@ package com.ns.note.note.entity;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +41,6 @@ public class NoteEntityTest{
 
         // then
         assertThat(note.getDeletedAt()).isNotNull();
-        assertThat(note.getDeletedAt()).isBeforeOrEqualTo(LocalDateTime.now());
+        assertThat(note.getDeletedAt()).isBeforeOrEqualTo(Instant.now());
     }
 }

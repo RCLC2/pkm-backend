@@ -3,6 +3,7 @@ package com.ns.note.note.dto.response;
 import com.ns.note.note.vo.NoteResponseVo;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -13,11 +14,11 @@ public class NoteResponseDto {
     private final String title;
     private final String description;
     private final String contents;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime updatedAt;
+    private final Instant createdAt;
+    private final Instant updatedAt;
 
     private NoteResponseDto(String id, String title, String description, String contents,
-                            LocalDateTime createdAt, LocalDateTime updatedAt) {
+                            Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.title = title;
         this.description = description;

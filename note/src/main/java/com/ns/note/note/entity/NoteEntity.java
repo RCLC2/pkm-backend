@@ -4,42 +4,49 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
-@Document(collection = "note")
+@Document(indexName = "note")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class NoteEntity {
-
     @Id
     private String id;
 
+    @Field(type = FieldType.Text)
     private String title;
+    @Field(type = FieldType.Text)
     private String description;
+    @Field(type = FieldType.Text)
     private String contents;
 
     @CreatedDate
-    private LocalDateTime createdAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant updatedAt;
 
-    private LocalDateTime deletedAt;
+    @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
+    private Instant deletedAt;
 
     public void update(String title, String description, String contents) {
         this.title = title;
         this.description = description;
         this.contents = contents;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 
     public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = Instant.now();
     }
 
 }
