@@ -73,7 +73,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 //문서 모니터링
                 "/swagger-ui.html",
                 "/swagger-ui",
-                "/v3/api-docs"
+                "/v3/api-docs",
+                "/actuator/**"
         );
 
         String path = request.getRequestURI();

@@ -32,7 +32,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/google/**", // 로그인/회원가입/콜백
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/actuator/health"
+                                "/actuator/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

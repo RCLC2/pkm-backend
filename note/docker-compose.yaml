@@ -1,26 +1,36 @@
 services:
-  mongo:
-    image: mongo:7
-    container_name: note-mongo
+  # 1. MongoDB 대신 Elasticsearch 서비스 추가
+  elasticsearch:
+    image: elasticsearch:8.14.0 # 안정적인 최신 버전 사용 권장
+    container_name: note-elasticsearch
     ports:
-      - "27018:27017"
+      - "9200:9200" # 외부(로컬 호스트)에서 9200 포트로 접근 가능
     environment:
-      MONGO_INITDB_DATABASE: rclc-note
+      # 로컬 테스트를 위한 단일 노드 설정
+      - discovery.type=single-node
+      # 메모리 설정을 통해 안정화 (최소 2GB 메모리 할당 권장)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      # Elasticsearch 8.x 버전을 위해 보안(X-Pack)을 일시적으로 비활성화합니다.
+      - xpack.security.enabled=false
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1})"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
 
+  # 2. 스프링 부트 애플리케이션 서비스
   note:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: note-app
-    # platform: linux/amd64        # (Mac/ARM에서 리눅스 배포 타겟 테스트 시 켜세요)
+    # platform: linux/amd64
     ports:
-      - "8083:8080"                # http://localhost:8083
+      - "8083:8080"
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/rclc-note
+      # 🚨 MongoDB URI 대신 Elasticsearch URI 사용
+      # Docker Compose 내부에서는 서비스 이름 'elasticsearch'를 호스트로 사용합니다.
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
     depends_on:
-      - mongo
+      elasticsearch:
+        condition: service_healthy
