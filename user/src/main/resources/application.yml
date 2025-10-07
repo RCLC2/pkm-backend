@@ -17,11 +17,11 @@ spring:
     name: user
   data:
     mongodb:
-      host: localhost
+      host: mongo.infra.svc.cluster.local
       port: 27017
       database: user
     redis:
-      host: localhost
+      host: redis.infra.svc.cluster.local
       port: 6379
 
 jwt:
