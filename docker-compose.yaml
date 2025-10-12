@@ -132,6 +132,7 @@ services:
       - SERVER_PORT=8002
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=notes
+      - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
     ports: ["8002:8002"]
     depends_on:
       elasticsearch:

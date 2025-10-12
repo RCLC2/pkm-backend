@@ -41,7 +41,7 @@ class NoteServiceTest {
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(saved);
 
         // when
-        NoteResponseVo result = noteService.createNewNote(vo);
+        NoteResponseVo result = noteService.createNewNote(vo,"Bearer test-token");
 
         // then
         assertThat(result.title()).isEqualTo("title");
