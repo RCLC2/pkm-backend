@@ -15,6 +15,10 @@ public enum ResponseStatus {
     AUTH_LOGIN_SUCCESS(HttpStatus.OK, "로그인에 성공했습니다."),
     AUTH_LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃이 성공적으로 처리되었습니다."),
     AUTH_REFRESH_SUCCESS(HttpStatus.OK, "토큰이 성공적으로 재발급되었습니다."),
+
+    PERMISSION_OWNER_REGISTER_SUCCESS(HttpStatus.OK,"노트의 OWNER 설정이 성공적으로 처리되었습니다."),
+    PERMISSION_GRANT_SUCCESS(HttpStatus.OK,"노트의 권한 부여가 성공적으로 처리되었습니다."),
+    PERMISSION_REVOKE_SUCCESS(HttpStatus.OK,"노트의 권한 삭제가 성공적으로 처리되었습니다."),
     AUTH_TOKEN_VALID(HttpStatus.OK, "토큰이 유효합니다.");
 
     private final int statusCode;
