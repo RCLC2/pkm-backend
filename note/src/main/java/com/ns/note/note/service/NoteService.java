@@ -44,8 +44,10 @@ public class NoteService {
         try {
             registerOwner(newNote.getId(), authorization);
         } catch (HttpStatusCodeException e) { // 4xx / 5xx 모두 처리
+            noteRepository.delete(newNote);
             throw new ServiceException(OWNER_PERMISSION_REGISTER_FAILED);
         } catch (ResourceAccessException e) { // 연결 문제
+            noteRepository.delete(newNote);
             throw new ServiceException(USER_SERVICE_ACCESS_FAILED);
         }
 

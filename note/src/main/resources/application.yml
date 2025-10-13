@@ -9,7 +9,7 @@ server:
 
 services:
   user:
-    base-rul: ${USER_SERVICE_URL:http://user-service:8080}
+    base-url: ${USER_SERVICE_URL:http://user-service:8080}
 
 management:
   endpoints:
