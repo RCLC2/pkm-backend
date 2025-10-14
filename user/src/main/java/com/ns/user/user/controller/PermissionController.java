@@ -6,7 +6,6 @@ import com.ns.user.response.GlobalResponseHandler;
 import com.ns.user.user.dto.request.GrantPermissionRequestDto;
 import com.ns.user.user.dto.request.OwnerRegisterRequestDto;
 import com.ns.user.user.dto.request.RevokePermissionRequestDto;
-import com.ns.user.user.entity.PermissionRole;
 import com.ns.user.user.service.PermissionService;
 import com.ns.user.user.vo.GrantPermissionVo;
 import com.ns.user.user.vo.OwnerRegisterVo;

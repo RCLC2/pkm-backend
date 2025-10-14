@@ -73,6 +73,8 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      - YORKIE_JWT_SECRET=${YORKIE_JWT_SECRET}
+      - YORKIE_WEBHOOK_SECRET=${YORKIE_WEBHOOK_SECRET}
     ports: ["8080:8080"]
     depends_on:
       mongodb:
@@ -81,6 +83,12 @@ services:
         condition: service_started
     restart: always
     networks: [pkm-network]
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   graph-service:
     build:
@@ -139,3 +147,30 @@ services:
         condition: service_healthy
     restart: always
     networks: [pkm-network]
+
+  yorkie:
+    image: yorkieteam/yorkie:latest
+    container_name: yorkie
+    command:
+      - server
+      - --hostname=0.0.0.0
+      - --rpc-port=8085                 # 컨테이너 내부 RPC 포트
+      - --mongo-connection-uri=mongodb://mongodb:27017
+      - --mongo-yorkie-database=yorkie-meta
+    ports:
+      - "8085:8085"  # FE rpcAddr: http://localhost:8085
+    volumes:
+      - ./yorkie.yml:/etc/yorkie.yml:ro
+    depends_on:
+      user-service:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: always
+    networks: [ pkm-network ]
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8085/ | head -1 >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
