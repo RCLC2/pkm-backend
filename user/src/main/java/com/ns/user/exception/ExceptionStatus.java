@@ -46,7 +46,7 @@ public enum ExceptionStatus {
     PERMISSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 권한입니다."),
     PERMISSION_OWNER_ONLY(HttpStatus.FORBIDDEN, "OWNER만 수행할 수 있는 작업입니다."),
     PERMISSION_CANNOT_CHANGE_OWNER(HttpStatus.BAD_REQUEST, "OWNER 권한은 부여하거나 삭제할 수 없습니다."),
-    PERMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "삭제할 권한을 찾을 수 없습니다.");
+    PERMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "권한을 찾을 수 없습니다.");
 
     private final int statusCode;
     private final String message;

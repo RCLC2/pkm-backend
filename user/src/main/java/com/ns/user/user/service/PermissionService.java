@@ -1,13 +1,11 @@
 package com.ns.user.user.service;
 
 import com.ns.user.exception.ServiceException;
+import com.ns.user.user.vo.*;
 import org.springframework.dao.DuplicateKeyException;
 import com.ns.user.user.entity.PermissionEntity;
 import com.ns.user.user.entity.PermissionRole;
 import com.ns.user.user.repository.PermissionRepository;
-import com.ns.user.user.vo.GrantPermissionVo;
-import com.ns.user.user.vo.OwnerRegisterVo;
-import com.ns.user.user.vo.RevokePermissionVo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -100,6 +98,18 @@ public class PermissionService {
         }
     }
 
+    @Transactional
+    public PermissionMeVo getMyPermission(PermissionMeQueryVo permissionMeQueryVo) {
+        PermissionRole role = roleOf(permissionMeQueryVo.noteId(), permissionMeQueryVo.userId());
+
+        if (role == null) {
+            throw new ServiceException(PERMISSION_NOT_FOUND);
+        }
+
+        return PermissionMeVo.of(permissionMeQueryVo.noteId(), permissionMeQueryVo.userId(), role);
+    }
+
+
     // redis 우선 -> mongo fallback
     private void ensureOwner(String noteId, String requesterId) {
         String owner = redis.opsForValue().get("note:owner:" + noteId);
@@ -118,5 +128,31 @@ public class PermissionService {
         // 노트 OWNER 정보가 mongoDB에 있을경우 다시 redis에 정보 캐싱
         String ownerKey = "note:owner:" + noteId;
         redis.opsForValue().set(ownerKey, requesterId);
+    }
+
+    public PermissionRole roleOf(String noteId, String userId) {
+        // redis 캐시 먼저 조회
+        String owner = redis.opsForValue().get("note:owner:" + noteId);
+        if (owner != null && owner.equals(userId)) return PermissionRole.OWNER;
+
+        if (Boolean.TRUE.equals(redis.opsForSet().isMember("note:writers:" + noteId, userId)))
+            return PermissionRole.WRITER;
+
+        if (Boolean.TRUE.equals(redis.opsForSet().isMember("note:readers:" + noteId, userId)))
+            return PermissionRole.READER;
+
+        return permissionRepository.findPermissionRoleByNoteIdAndUserIdAndDeletedAtIsNull(noteId, userId)
+                .map(entity -> {
+                    PermissionRole role = entity.getRole();
+
+                    // 3️⃣ Redis fallback (role별 캐싱)
+                    switch (role) {
+                        case OWNER -> redis.opsForValue().set("note:owner:" + noteId, userId);
+                        case WRITER -> redis.opsForSet().add("note:writers:" + noteId, userId);
+                        case READER -> redis.opsForSet().add("note:readers:" + noteId, userId);
+                    }
+                    return role;
+                })
+                .orElse(null);
     }
 }
