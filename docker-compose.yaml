@@ -141,6 +141,8 @@ services:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=notes
       - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
+      - --admin-username=rclc
+      - --admin-password=rclc
     ports: ["8002:8002"]
     depends_on:
       elasticsearch:
@@ -157,6 +159,7 @@ services:
       - --rpc-port=8085                 # 컨테이너 내부 RPC 포트
       - --mongo-connection-uri=mongodb://mongodb:27017
       - --mongo-yorkie-database=yorkie-meta
+      - --log-level=debug             # (선택) 웹훅 트레이스 보기 좋음
     ports:
       - "8085:8085"  # FE rpcAddr: http://localhost:8085
     volumes:
