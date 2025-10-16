@@ -3,7 +3,6 @@ package com.ns.user.user.service;
 import com.ns.user.exception.ServiceException;
 import com.ns.user.jwt.YorkieJwtProvider;
 import com.ns.user.user.dto.DocumentAttributeDto;
-import com.ns.user.user.dto.response.YorkieAuthWebhookResponseDto;
 import com.ns.user.user.dto.response.YorkieTokenResponseDto;
 import com.ns.user.user.entity.PermissionRole;
 import com.ns.user.user.vo.YorkieAuthResultVo;
@@ -40,7 +39,6 @@ public class YorkieService {
                 yorkieTokenIssueVo.noteId(),
                 role.name(),
                 verb,
-                "PushPull",
                 Duration.ofSeconds(yorkieTtlSeconds)
         );
 
@@ -48,7 +46,7 @@ public class YorkieService {
         return new YorkieTokenResponseDto(
                 token,
                 yorkieTtlSeconds,
-                new DocumentAttributeDto("note:" + yorkieTokenIssueVo.noteId(), verb)
+                new DocumentAttributeDto("note-" + yorkieTokenIssueVo.noteId(), verb)
         );
     }
 
@@ -68,9 +66,25 @@ public class YorkieService {
             return YorkieAuthResultVo.of(false, "VERB_MISMATCH");
         }
 
-        return YorkieAuthResultVo.of(true, null);
-    }
+        String method = yorkieAuthWebhookVo.method();
+        String verb = yorkieClaims.getVerb();
 
+        // 권한 검증 (AttachDocument, WatchDocuments: 무조건 허용, PushPull: verb에 따라 rw만 허용)
+        return switch (method) {
+            case "AttachDocument", "WatchDocuments" -> YorkieAuthResultVo.of(true, null);
+            case "PushPull" -> {
+                if (!"rw".equals(verb)) {
+                    yield YorkieAuthResultVo.of(false, "READ_ONLY");
+                }
+                yield YorkieAuthResultVo.of(true, null);
+            }
+
+            // (선택) 기타 서버 호출
+            case "ActivateClient" -> YorkieAuthResultVo.of(true, null);
+            default -> YorkieAuthResultVo.of(false, "METHOD_NOT_ALLOWED");
+        };
+
+    }
 
     private String roleToVerb(PermissionRole role) {
         return switch (role) {

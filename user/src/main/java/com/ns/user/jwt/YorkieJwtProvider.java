@@ -32,11 +32,11 @@ public class YorkieJwtProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // yorkie 토큰 생성
     public String generateYorkieToken(String userId,
                        String noteId,
                        String role,   // OWNER|WRITER|READER
                        String verb,   // r|rw
-                       String scope,  // "PushPull"
                        Duration ttl) {
 
         Date now = new Date();
@@ -47,13 +47,13 @@ public class YorkieJwtProvider {
                 .claim("noteId", noteId)
                 .claim("role", role)
                 .claim("verb", verb)
-                .claim("scope", scope)
                 .setIssuedAt(now)
                 .setExpiration(exp)
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
+    // yorkie 토큰 검증
     public Claims validateYorkieToken(String token) {
         try {
            return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
@@ -66,31 +66,30 @@ public class YorkieJwtProvider {
         }
     }
 
+    // yorkie 토큰 검증 + 클레임 값 추출
     public YorkieClaims verifiedYorkieClaims(String token) {
         Claims c = validateYorkieToken(token);
         String userId = c.getSubject();
         String noteId = c.get("noteId", String.class);
         String role = c.get("role", String.class);
         String verb = c.get("verb", String.class);
-        String scope = c.get("scope", String.class);
 
-        return new YorkieClaims(userId, noteId, role, verb, scope);
+        return new YorkieClaims(userId, noteId, role, verb);
     }
 
+    // yorkie 토큰의 클레임 값을 담는 DTO
     @Getter
     public static class YorkieClaims {
         private final String userId;
         private final String noteId;
         private final String role;
         private final String verb;
-        private final String scope;
 
-        private YorkieClaims(String userId, String noteId, String role, String verb, String scope) {
+        private YorkieClaims(String userId, String noteId, String role, String verb) {
             this.userId = userId;
             this.noteId = noteId;
             this.role = role;
             this.verb = verb;
-            this.scope = scope;
         }
     }
 }

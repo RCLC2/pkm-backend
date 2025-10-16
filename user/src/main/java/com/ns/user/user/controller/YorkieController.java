@@ -1,6 +1,5 @@
 package com.ns.user.user.controller;
 
-import com.ns.user.exception.AuthException;
 import com.ns.user.jwt.CurrentUser;
 import com.ns.user.response.GlobalResponseHandler;
 import com.ns.user.response.ResponseStatus;
@@ -32,9 +31,11 @@ public class YorkieController {
 
     private final YorkieService yorkieService;
 
+
     @Value("${yorkie.webhook.secret:${YORKIE_WEBHOOK_SECRET:}}")
     private String webhookSecret;
 
+    // 노트에 접근하기 위한 yorkie 토큰 발급
     @PostMapping("/token")
     public ResponseEntity<GlobalResponseHandler<YorkieTokenResponseDto>> issueToken(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -47,6 +48,7 @@ public class YorkieController {
         return GlobalResponseHandler.success(ResponseStatus.YORKIE_TOKEN_ISSUE, yorkieTokenResponseDto);
     }
 
+    // yorkie 서버에서 호출하는 권한 검증용 webhook 엔드포인트
     @PostMapping("/auth")
     public ResponseEntity<YorkieAuthWebhookResponseDto> authorizeFromYorkie(
             @RequestHeader(value = "X-Yorkie-Webhook-Secret", required = false) String headerSecret,
@@ -64,7 +66,7 @@ public class YorkieController {
             return ResponseEntity.ok(YorkieAuthWebhookResponseDto.deny("INVALID_ATTRIBUTES"));
         }
 
-        // "note:123" -> "123"
+        // "note-123" -> "123"
         String noteId = parseNoteId(attr.getKey());
         if (!StringUtils.hasText(noteId) || !StringUtils.hasText(attr.getVerb())) {
             return ResponseEntity.ok(YorkieAuthWebhookResponseDto.deny("INVALID_NOTE_OR_VERB"));
@@ -87,7 +89,7 @@ public class YorkieController {
         );
     }
 
-
+    // 단일 속성만 허용
     private DocumentAttributeDto extractSingleAttr(List<DocumentAttributeDto> attrs) {
         if (CollectionUtils.isEmpty(attrs) || attrs.size() != 1) return null;
         DocumentAttributeDto a = attrs.getFirst();
@@ -95,10 +97,10 @@ public class YorkieController {
         return a;
     }
 
-    // "note:123" -> "123"
+    // "note-123" -> "123"
     private String parseNoteId(String key) {
         if (!StringUtils.hasText(key)) return null;
-        String prefix = "note:";
+        String prefix = "note-";
         return key.startsWith(prefix) ? key.substring(prefix.length()) : null;
     }
 }
