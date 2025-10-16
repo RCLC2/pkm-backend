@@ -19,6 +19,8 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      YORKIE_JWT_SECRET: ${{ secrets.YORKIE_JWT_SECRET }}
+      YORKIE_WEBHOOK_SECRET: ${{ secrets.YORKIE_WEBHOOK_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
