@@ -8,33 +8,68 @@ spring:
     gateway:
       routes:
         - id: note_route
-          uri: lb://note-service
+          uri: lb://note-svc
           predicates:
             - Path=/api/notes/**
           filters:
             - StripPrefix=2
             - Logging
             - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: noteServiceTimeLimiter
             - name: CircuitBreaker
               args:
                 name: noteServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
         - id: topic_route
-          uri: lb://topic-service
+          uri: lb://topic-svc
           predicates:
             - Path=/api/topics/**
           filters:
             - StripPrefix=2
             - Logging
             - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: topicServiceTimeLimiter
             - name: CircuitBreaker
               args:
                 name: topicServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
-jwt:
-  secret: s3fijijfoisjdf90203jfsefjsifjpaidj32jdfka
+        - id: graph_route
+          uri: lb://graph-svc
+          predicates:
+            - Path=/api/graphs/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: default
+            - name: CircuitBreaker
+              args:
+                name: default
+                fallbackUri: forward:/fallback
+
+        - id: user_route
+          uri: lb://user-svc
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: default
+            - name: CircuitBreaker
+              args:
+                name: default
+                fallbackUri: forward:/fallback
 
 circuitbreaker:
   configs:
@@ -58,7 +93,7 @@ circuitbreaker:
       failureRateThreshold: 70
       slidingWindowSize: 15
       waitDurationInOpenState: 7s
-      
+
 timelimiter:
   configs:
     default:
@@ -68,4 +103,4 @@ timelimiter:
       timeoutDuration: 3s
 
     topicServiceTimeLimiter:
-      timeoutDuration: 1s
+      timeoutDuration: 3s

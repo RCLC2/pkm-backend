@@ -19,4 +19,4 @@ COPY --from=builder /app/${JAR_FILE} app.jar
 
 EXPOSE 8000
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-XX:+UseG1GC", "-Xlog:gc*:file=/logs/g1-gc.log:tags,uptime,time,level", "-XX:+HeapDumpOnOutOfMemoryError", "-jar", "/app.jar"]
