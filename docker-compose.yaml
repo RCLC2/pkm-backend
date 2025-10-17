@@ -12,6 +12,23 @@ services:
     networks:
       - pkm-network
 
+  gateway-service:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    environment:
+      - JWT_SECRET=
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user-service
+      - note-service
+      - graph-service
+      - topic-service
+    networks:
+      - pkm-network
+
   user-service:
     build:
       context: ./user
