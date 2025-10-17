@@ -1,16 +1,64 @@
-version: '3.8'
+version: "3.8"
+
+networks:
+  pkm-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  esdata:
+  esplugs:
 
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:7
     container_name: mongodb
-    ports:
-      - "27017:27017"
+    ports: ["27017:27017"]
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: [ "CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep 1 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     restart: always
-    networks:
-      - pkm-network
+    networks: [pkm-network]
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    restart: always
+    networks: [pkm-network]
+
+  elasticsearch:
+    build:
+      context: ./topic/esclient
+      dockerfile: Dockerfile
+    image: pkm-backend-elasticsearch:latest
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ES_PLUGINS_INSTALL=analysis-nori
+    ports: ["9200:9200"]
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+      - esplugs:/usr/share/elasticsearch/plugins
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"' || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: always
+    networks: [pkm-network]
 
   user-service:
     build:
@@ -18,39 +66,29 @@ services:
       dockerfile: Dockerfile
     container_name: user-service
     environment:
-      - PORT=8001
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/<user_db>
-      - JWT_SECRET=Twoiefjoweijfoiejfoiwjfowijfoawijfowijfpiwjepfiwjepfi
-      - JWT_ACCESS_EXP_MINUTES=
-      - JWT_REFRESH_EXP_DAYS=
-      - GOOGLE_CLIENT_ID=
-      - GOOGLE_CLIENT_SECRET=
-      - GOOGLE_CLIENT_REDIRECT_URI=
-      - GOOGLE_OAUTH_TOKEN_URI=
-      - GOOGLE_OAUTH_ISSUER=
-      - GOOGLE_OAUTH_JWKS_URI=
-    ports:
-      - "8001:8001"
+      - SERVER_PORT=8080
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/userdb
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - YORKIE_JWT_SECRET=${YORKIE_JWT_SECRET}
+      - YORKIE_WEBHOOK_SECRET=${YORKIE_WEBHOOK_SECRET}
+    ports: ["8080:8080"]
     depends_on:
-      - mongodb
-    networks:
-      - pkm-network
-
-  note-service:
-    build:
-      context: ./note
-      dockerfile: Dockerfile
-    container_name: note-service
-    environment:
-      - PORT=8002
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/<note_db>
-      - JWT_SECRET=dsfjwoijefiwjfpiwjdpfijdpvijlvspfijpifjwpeijfpempdifpw
-    ports:
-      - "8002:8002"
-    depends_on:
-      - mongodb
-    networks:
-      - pkm-network
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+    networks: [pkm-network]
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   graph-service:
     build:
@@ -62,12 +100,14 @@ services:
       - MONGO_URI=mongodb://mongodb:27017
       - MONGO_DB_NAME=graphdb
       - TOPIC_SERVICE_URL=http://topic-service:8004
-    ports:
-      - "8003:8003"
+    ports: ["8003:8003"]
     depends_on:
-      - mongodb
-    networks:
-      - pkm-network
+      mongodb:
+        condition: service_healthy
+      topic-service:
+        condition: service_started
+    restart: always
+    networks: [pkm-network]
 
   topic-service:
     build:
@@ -78,37 +118,62 @@ services:
       - SERVER_PORT=8004
       - ELASTICSEARCH_ADDR=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=topics
-    ports:
-      - "8004:8004"
+    ports: ["8004:8004"]
     depends_on:
-      - elasticsearch
-    networks:
-      - pkm-network
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8004/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    restart: always
+    networks: [pkm-network]
 
-  elasticsearch:
+  note-service:
     build:
-      context: ./topic/esclient
+      context: ./note
       dockerfile: Dockerfile
-    image: pkm-backend-elasticsearch:latest
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
+    container_name: note-service
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
-      - ES_PLUGINS_INSTALL=analysis-nori
+      - SERVER_PORT=8002
+      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
+      - ELASTICSEARCH_INDEX=notes
+      - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
+      - --admin-username=rclc
+      - --admin-password=rclc
+    ports: ["8002:8002"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: always
+    networks: [pkm-network]
+
+  yorkie:
+    image: yorkieteam/yorkie:latest
+    container_name: yorkie
+    command:
+      - server
+      - --hostname=0.0.0.0
+      - --rpc-port=8085                 # 컨테이너 내부 RPC 포트
+      - --mongo-connection-uri=mongodb://mongodb:27017
+      - --mongo-yorkie-database=yorkie-meta
+      - --log-level=debug             # (선택) 웹훅 트레이스 보기 좋음
+    ports:
+      - "8085:8085"  # FE rpcAddr: http://localhost:8085
     volumes:
-      - esdata:/usr/share/elasticsearch/data
-      - esplugs:/usr/share/elasticsearch/plugins
-    networks:
-      - pkm-network
-
-volumes:
-  mongodb_data:
-  esdata:
-  esplugs:
-
-networks:
-  pkm-network:
-    driver: bridge
+      - ./yorkie.yml:/etc/yorkie.yml:ro
+    depends_on:
+      user-service:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: always
+    networks: [ pkm-network ]
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8085/ | head -1 >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s

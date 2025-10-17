@@ -22,14 +22,16 @@ public class NoteController {
 
     // 노트 생성
     @PostMapping("/create")
-    public ResponseEntity<GlobalResponseHandler<NoteResponseDto>> createNewNote(@RequestBody NoteCreateRequestDto dto) {
+    public ResponseEntity<GlobalResponseHandler<NoteResponseDto>> createNewNote(
+            @RequestBody NoteCreateRequestDto dto,
+            @RequestHeader("Authorization") String authorization) {
         NoteRequestVo vo = new NoteRequestVo(
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getContents()
         );
 
-        NoteResponseVo responseVo = noteService.createNewNote(vo);
+        NoteResponseVo responseVo = noteService.createNewNote(vo, authorization);
 
         return GlobalResponseHandler.success(
                 ResponseStatus.NOTE_CREATE_SUCCESS,
