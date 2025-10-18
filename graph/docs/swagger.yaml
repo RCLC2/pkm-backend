@@ -181,4 +181,42 @@ paths:
       summary: 워크스페이스 스타일 변경
       tags:
       - Workspace
+  /api/workspaces/{workspaceId}/type:
+    get:
+      description: 특정 워크스페이스가 존재할 경우 해당 워크스페이스의 타입을 반환합니다.
+      parameters:
+      - description: 조회할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      - description: 사용자 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"status": "success", "type": "generic"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: '{"error": "Workspace not found"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{"error": "..."}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 워크스페이스 타입 조회
+      tags:
+      - Workspace
 swagger: "2.0"
