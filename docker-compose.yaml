@@ -116,6 +116,9 @@ services:
       - PORT=8003
       - MONGO_URI=mongodb://mongodb:27017
       - MONGO_DB_NAME=graphdb
+      - YORKIE_ADDR=yorkie:8085
+      - YORKIE_ADMIN_USERNAME=admin
+      - YORKIE_ADMIN_PASSWORD=admin
       - TOPIC_SERVICE_URL=http://topic-service:8004
       - DOCUMENT_SERVICE_URL=http://note-service:8002
     ports: ["8003:8003"]
@@ -171,24 +174,9 @@ services:
   yorkie:
     image: yorkieteam/yorkie:latest
     container_name: yorkie
-    command:
-      - server
-      - --hostname=0.0.0.0
-      - --config=/etc/yorkie.yml
-      - --rpc-port=8085                 # 컨테이너 내부 RPC 포트
-      - --mongo-connection-uri=mongodb://mongodb:27017
-      - --mongo-yorkie-database=yorkie-meta
-      - --log-level=debug             # (선택) 웹훅 트레이스 보기 좋음
+    command: ["server", "--config", "/etc/yorkie.yml"]
     ports:
-      - "8085:8085"  # FE rpcAddr: http://localhost:8085
-    environment:
-      - YORKIE_MONGO_CONNECTION_URI=mongodb://mongodb:27017
-      - YORKIE_MONGO_YORKIE_DATABASE=yorkie-meta
-      - YORKIE_AUTH_WEBHOOK_ENABLED=true
-      - YORKIE_AUTH_WEBHOOK_URL=http://user-service:8080/api/v1/yorkie/auth
-      - YORKIE_AUTH_WEBHOOK_SECRET=fwoijfoewijfowejfoiwejfoiewjfeowij
-      - YORKIE_AUTH_WEBHOOK_CACHE_SIZE=5000
-      - YORKIE_AUTH_WEBHOOK_CACHE_AUTHTTL=10m
+      - "8085:8085"
     volumes:
       - ./yorkie.yml:/etc/yorkie.yml:ro
     depends_on:

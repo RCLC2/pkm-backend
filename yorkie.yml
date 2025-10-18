@@ -1,12 +1,25 @@
 log:
-  level: info
+  level: debug
 
-projects:
-  - name: my-realtime-project
-    public_key: ZLiiE7TeRx2RRTjVW6Ux2B
-    secret_key: UzZKcJEVfEQb2KpDtJSLpF
-    auth_webhook_url: http://user-service:8080/api/v1/yorkie/auth
-    auth_webhook_methods:
-      - AttachDocument
-      - PushPull
-      - WatchDocuments
+RPC:  
+  Port: 8085  
+  
+Backend:  
+  UseDefaultProject: true  
+  ClientDeactivateThreshold: "24h"  
+  SnapshotThreshold: 1000  
+  SnapshotInterval: 3000  
+  Hostname: "0.0.0.0" 
+  AuthWebhookURL: "http://user-service:8080/api/v1/yorkie/auth"  
+  AuthWebhookMethods:
+    - AttachDocument
+    - PushPull
+    - WatchDocuments
+  AuthWebhookCacheSize: 5000  
+  AuthWebhookCacheTTL: "10m"
+  
+Mongo:  
+  ConnectionURI: "mongodb://mongodb:27017" 
+  ConnectionTimeout: "5s"  
+  YorkieDatabase: "yorkie-meta"  
+  PingTimeout: "5s"
