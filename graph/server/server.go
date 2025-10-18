@@ -32,7 +32,5 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	router.GET("/:workspaceId/type", workspaceHandler.GetWorkspaceType)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
 }

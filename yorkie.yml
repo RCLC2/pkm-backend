@@ -1,19 +1,6 @@
 log:
   level: info
 
-mongo:
-  connectionURI: mongodb://mongodb:27017
-  yorkieDatabase: yorkie-meta
-
-auth:
-  webhook:
-    enabled: true
-    url: http://user-service:8080/api/v1/yorkie/auth
-    secret: ${YORKIE_WEBHOOK_SECRET}
-    cache:
-      size: 5000
-      authTTL: 10m
-
 projects:
   - name: my-realtime-project
     public_key: ZLiiE7TeRx2RRTjVW6Ux2B
