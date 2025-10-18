@@ -31,4 +31,4 @@ jobs:
 
       - name: Push ONLY 'main' branch
         run: |
-          git push sc main
+          git push -f sc main

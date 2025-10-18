@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
@@ -28,6 +30,9 @@ class NoteServiceTest {
     @InjectMocks
     private NoteService noteService;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     @Test
     void createNewNote_success() {
         // given
@@ -40,8 +45,12 @@ class NoteServiceTest {
 
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(saved);
 
+        // 🔧 RestTemplate Mock 응답 (registerOwner 호출 시)
+        when(restTemplate.exchange(anyString(), any(), any(), eq(Void.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
         // when
-        NoteResponseVo result = noteService.createNewNote(vo);
+        NoteResponseVo result = noteService.createNewNote(vo,"Bearer test-token");
 
         // then
         assertThat(result.title()).isEqualTo("title");

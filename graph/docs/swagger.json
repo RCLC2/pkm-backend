@@ -328,6 +328,203 @@
                     }
                 }
             }
+        },
+        "/connections/confirm": {
+            "post": {
+                "description": "제안된(pending) 또는 편집된(edited) 문서 간의 그래프 연결을 확정(confirmed) 상태로 변경합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph Connection"
+                ],
+                "summary": "그래프 연결 확정",
+                "parameters": [
+                    {
+                        "description": "연결을 확정할 Source 문서 ID 및 Target 문서 ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                " targetId": {
+                                    "type": "string"
+                                },
+                                "sourceId": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/connections/edit": {
+            "post": {
+                "description": "사용자가 문서 간의 연결을 수동으로 편집했음을 표시하기 위해 연결 상태를 'edited'로 변경합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph Connection"
+                ],
+                "summary": "그래프 연결 편집 상태로 설정",
+                "parameters": [
+                    {
+                        "description": "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                " targetId": {
+                                    "type": "string"
+                                },
+                                "sourceId": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/documents/{documentId}/para": {
+            "post": {
+                "description": "특정 문서를 PARA(Projects, Areas, Resources, Archives) 시스템의 카테고리로 지정합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Document"
+                ],
+                "summary": "문서에 PARA 카테고리 설정",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "카테고리를 설정할 문서 ID",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Category (e.g., Project, Area)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "category": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/documents/{documentId}/zettelkasten": {
+            "post": {
+                "description": "특정 문서에서 기존에 설정된 PARA 카테고리 정보를 제거하여 제텔카스텐(Zettelkasten) 방식으로 전환합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Document"
+                ],
+                "summary": "문서를 제텔카스텐 형식으로 변환 (PARA 카테고리 제거)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "변환할 문서 ID",
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/workspaces/{workspaceId}/autoconnect": {
+            "post": {
+                "description": "워크스페이스의 모든 문서를 분석하여 유사한 문서 쌍을 찾아 'pending' 상태의 백링크를 자동으로 생성합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace Graph"
+                ],
+                "summary": "워크스페이스 문서 자동 연결 (PARA -\u003e Zettelkasten 변환 단계)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "자동 연결을 수행할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/workspaces/{workspaceId}/confirm-all": {
+            "post": {
+                "description": "특정 워크스페이스 내의 모든 'pending' 또는 'edit' 상태의 그래프 연결을 'confirmed' 상태로 일괄 변경합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace Graph"
+                ],
+                "summary": "워크스페이스 내 모든 '미완료' 연결 확정",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "연결을 일괄 확정할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/workspaces/{workspaceId}/graph": {
+            "get": {
+                "description": "특정 워크스페이스 내 모든 문서 노드와 그 연결 관계(엣지)를 조회합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace Graph"
+                ],
+                "summary": "워크스페이스 그래프 구조 조회",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "조회할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
         }
     }
 }

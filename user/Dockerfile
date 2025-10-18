@@ -23,6 +23,10 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
 
+ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -Xlog:gc*:file=/logs/g1-gc.log:tags,uptime,time,level -XX:+HeapDumpOnOutOfMemoryError"
+
+RUN mkdir -p /logs && chmod 777 /logs
+
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
   CMD curl -fsS http://localhost:8080/actuator/health | grep '"status":"UP"' || exit 1
 

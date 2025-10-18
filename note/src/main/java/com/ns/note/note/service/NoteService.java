@@ -2,20 +2,36 @@ package com.ns.note.note.service;
 
 import com.ns.note.exception.ExceptionStatus;
 import com.ns.note.exception.ServiceException;
+import com.ns.note.note.dto.request.OwnerRegisterRequestDto;
 import com.ns.note.note.entity.NoteEntity;
 import com.ns.note.note.repository.NoteRepository;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
+import static com.ns.note.exception.ExceptionStatus.OWNER_PERMISSION_REGISTER_FAILED;
+import static com.ns.note.exception.ExceptionStatus.USER_SERVICE_ACCESS_FAILED;
 
 @Service
 @RequiredArgsConstructor
 public class NoteService {
 
     private final NoteRepository noteRepository;
+    private final RestTemplate restTemplate;
 
-    public NoteResponseVo createNewNote(NoteRequestVo vo) {
+    @Value("${services.user.base-url}")
+    private String userBaseUrl;
+
+    public NoteResponseVo createNewNote(NoteRequestVo vo, String authorization) {
         NoteEntity entity = NoteEntity.builder()
                 .title(vo.title())
                 .description(vo.description())
@@ -23,6 +39,17 @@ public class NoteService {
                 .build();
 
         NoteEntity newNote = noteRepository.save(entity);
+
+        // USER 서비스로 OWNER 정보 저장 요청 ( MVP 기준, 나중에 관심사 분리 )
+        try {
+            registerOwner(newNote.getId(), authorization);
+        } catch (HttpStatusCodeException e) { // 4xx / 5xx 모두 처리
+            noteRepository.delete(newNote);
+            throw new ServiceException(OWNER_PERMISSION_REGISTER_FAILED);
+        } catch (ResourceAccessException e) { // 연결 문제
+            noteRepository.delete(newNote);
+            throw new ServiceException(USER_SERVICE_ACCESS_FAILED);
+        }
 
         return NoteEntitytoNoteResponseVo(newNote);
     }
@@ -65,6 +92,22 @@ public class NoteService {
                 note.getContents(),
                 note.getCreatedAt(),
                 note.getUpdatedAt()
+        );
+    }
+
+    private void registerOwner(String noteId, String bearer) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", bearer);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<OwnerRegisterRequestDto> entity =
+                new HttpEntity<>(new OwnerRegisterRequestDto(noteId), headers);
+
+        restTemplate.exchange(
+                userBaseUrl + "/api/v1/permission/owner/register",
+                HttpMethod.POST,
+                entity,
+                Void.class
         );
     }
 }
