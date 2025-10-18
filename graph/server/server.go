@@ -15,21 +15,19 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	graphHandler := handlers.NewGraphConnectionHandler(gs)
 	workspaceHandler := handlers.NewWorkspaceGraphHandler(gs, ws)
 
-	// 그래프 연결 관리
-	router.POST("/api/graphs/connect/confirm", graphHandler.ConfirmGraphConnection)
-	router.POST("/api/graphs/connect/edit", graphHandler.EditGraphConnection)
+	// Graph
+	router.POST("/api/connections/confirm", graphHandler.ConfirmGraphConnection)
+	router.POST("/api/connections/edit", graphHandler.EditGraphConnection)
+	router.POST("/api/connections/note-deleted", graphHandler.DeleteNoteGraph)
 
-	// 워크스페이스 그래프 조회
+	// Workspace
+	router.POST("/api/workspaces", workspaceHandler.CreateWorkspace)
+	router.PUT("/api/workspaces/:workspaceId", workspaceHandler.UpdateWorkspace)
+	router.DELETE("/api/workspaces/:workspaceId", workspaceHandler.DeleteWorkspace)
 	router.GET("/api/workspaces/:workspaceId/graph", workspaceHandler.GetWorkspaceGraph)
-
-	// 워크스페이스 타입 변환
-	router.POST("/api/workspaces/:workspaceId/change-style", workspaceHandler.ChangeWorkspaceStyle)
-
-	// 워크스페이스 내 모든 미확정 연결 확정
+	router.POST("/api/workspaces/:workspaceId/style", workspaceHandler.ChangeWorkspaceStyle)
 	router.POST("/api/workspaces/:workspaceId/confirm-all", workspaceHandler.ConfirmAllConnections)
-
-	// 워크스페이스가 존재하면 타입을 반환
-	router.GET("/:workspaceId/type", workspaceHandler.GetWorkspaceType)
+	router.GET("/api/workspaces/:workspaceId/type", workspaceHandler.GetWorkspaceType)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
