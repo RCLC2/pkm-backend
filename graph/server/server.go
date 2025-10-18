@@ -5,6 +5,8 @@ import (
 	"graph/services"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func NewServer(gs *services.GraphService) *gin.Engine {
@@ -30,5 +32,6 @@ func NewServer(gs *services.GraphService) *gin.Engine {
 	// 워크스페이스 내 모든 미확정 연결 확정
 	router.POST("/api/workspaces/:workspaceId/connect/confirm-all", graphHandler.ConfirmAllConnections)
 
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
 }
