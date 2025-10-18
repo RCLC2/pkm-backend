@@ -6,14 +6,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Document struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	WorkspaceID  string             `bson:"workspace_id" json:"workspaceId"`
-	Title        string             `bson:"title" json:"title"`
-	Content      string             `bson:"content" json:"content"`
-	ParaCategory string             `bson:"para_category,omitempty" json:"paraCategory"`
-	CreatedAt    time.Time          `bson:"created_at" json:"createdAt"`
-	UpdatedAt    time.Time          `bson:"updated_at" json:"updatedAt"`
+const (
+	WorkspaceTypeGeneric = "generic"
+	WorkspaceTypePara    = "para"
+	WorkspaceTypeZettel  = "zettel"
+)
+
+type Workspace struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title     string             `bson:"title" json:"title"`
+	Type      string             `bson:"type" json:"type"` // generic, para, zettel
+	UserID    string             `bson:"user_id" json:"userId"`
+	CreatedAt time.Time          `bson:"created_at" json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updated_at" json:"updatedAt"`
 }
 
 type GraphConnection struct {

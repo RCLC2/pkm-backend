@@ -49,17 +49,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "summary": "유사한 문서 탐색",
-                "parameters": [
-                    {
-                        "description": "콘텐츠와 상위 N개 문서 개수(default=5)",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SearchRequest"
-                        }
-                    }
-                ],
                 "responses": {}
             }
         }

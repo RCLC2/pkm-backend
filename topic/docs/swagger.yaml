@@ -32,13 +32,6 @@ paths:
       consumes:
       - application/json
       description: 문서와 유사한 문서 탐색
-      parameters:
-      - description: 콘텐츠와 상위 N개 문서 개수(default=5)
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.SearchRequest'
       produces:
       - application/json
       responses: {}

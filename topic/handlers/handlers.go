@@ -34,10 +34,6 @@ func (h *Handler) ExtractTags(c *gin.Context) {
 		return
 	}
 
-	if req.TopN == 0 {
-		req.TopN = 10
-	}
-
 	tags, err := h.es.ExtractTopTags(c.Request.Context(), req.Content, req.TopN)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -55,20 +51,41 @@ func (h *Handler) ExtractTags(c *gin.Context) {
 // @Description 문서와 유사한 문서 탐색
 // @Accept json
 // @Produce json
-// @Param request body SearchRequest true "콘텐츠와 상위 N개 문서 개수(default=5)"
+// @Param request body SearchRequest true "콘텐츠"
 // @Router /api/find-similar [post]
-func (h *Handler) FindSimilarDocs(c *gin.Context) {
+func (h *Handler) FindSimilarDocsByContent(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if req.TopN == 0 {
-		req.TopN = 5
+	ids, err := h.es.FindSimilarDocsByContent(c.Request.Context(), req.Content)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	ids, err := h.es.FindSimilarDocs(c.Request.Context(), req.Content, req.TopN)
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"ids":    ids,
+	})
+}
+
+// FindSimilarDocs godoc
+// @Summary 유사한 문서 탐색
+// @Description 문서와 유사한 문서 탐색
+// @Accept json
+// @Produce json
+// @Router /api/find-similar [post]
+func (h *Handler) FindSimilarDocsById(c *gin.Context) {
+	docsId := c.Query("noteId")
+	if docsId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "docsId is required"})
+		return
+	}
+
+	ids, err := h.es.FindSimilarDocsById(c.Request.Context(), docsId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

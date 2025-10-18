@@ -37,16 +37,13 @@ func (es *ElasticService) handleESResponse(res *esapi.Response, prefix string) (
 	return res.Body, nil
 }
 
-func (es *ElasticService) FindSimilarDocs(ctx context.Context, content string, topN int) ([]string, error) {
+func (es *ElasticService) FindSimilarDocsByContent(ctx context.Context, content string) ([]string, error) {
 	if strings.TrimSpace(content) == "" {
 		return nil, errors.New("content is empty")
 	}
-	if topN <= 0 {
-		topN = 5
-	}
 
 	query := map[string]interface{}{
-		"size": topN,
+		"size": 100,
 		"query": map[string]interface{}{
 			"more_like_this": map[string]interface{}{
 				"fields":          []string{"content"},
@@ -57,9 +54,38 @@ func (es *ElasticService) FindSimilarDocs(ctx context.Context, content string, t
 		},
 	}
 
+	return es.executeSimilaritySearch(ctx, query)
+}
+
+func (es *ElasticService) FindSimilarDocsById(ctx context.Context, docId string) ([]string, error) {
+	if strings.TrimSpace(docId) == "" {
+		return nil, errors.New("docId is empty")
+	}
+
+	query := map[string]interface{}{
+		"size": 100,
+		"query": map[string]interface{}{
+			"more_like_this": map[string]interface{}{
+				"fields": []string{"content"},
+				"like": []interface{}{
+					map[string]interface{}{
+						"_index": es.indexName,
+						"_id":    docId,
+					},
+				},
+				"min_term_freq":   1,
+				"max_query_terms": 25,
+			},
+		},
+	}
+
+	return es.executeSimilaritySearch(ctx, query)
+}
+
+func (es *ElasticService) executeSimilaritySearch(ctx context.Context, query map[string]interface{}) ([]string, error) {
 	b, err := json.Marshal(query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal: %w", err)
+		return nil, fmt.Errorf("failed to marshal query: %w", err)
 	}
 
 	res, err := es.client.Search(
@@ -80,18 +106,22 @@ func (es *ElasticService) FindSimilarDocs(ctx context.Context, content string, t
 	var parsed struct {
 		Hits struct {
 			Hits []struct {
-				ID string `json:"_id"`
+				ID    string  `json:"_id"`
+				Score float64 `json:"_score"`
 			} `json:"hits"`
 		} `json:"hits"`
 	}
 
 	if err := utils.DecodeJSONResponse(body, &parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse: %w", err)
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
+	minScore := 70.0 // 70% 이상 유사해야 포함
 	ids := make([]string, 0, len(parsed.Hits.Hits))
 	for _, h := range parsed.Hits.Hits {
-		ids = append(ids, h.ID)
+		if h.Score >= minScore {
+			ids = append(ids, h.ID)
+		}
 	}
 	return ids, nil
 }
