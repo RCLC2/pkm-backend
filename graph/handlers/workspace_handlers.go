@@ -124,7 +124,7 @@ func (h *WorkspaceGraphHandler) GetWorkspaceGraph(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": response})
 }
 
-// ChangeWorkspaceStyle (새로 추가)
+// ChangeWorkspaceStyle
 // @Summary 워크스페이스 스타일 변경
 // @Description 워크스페이스의 스타일을 변경하고, 해당 스타일에 맞는 그래프 연결 작업을 비동기로 수행합니다.
 // @Tags Workspace
@@ -171,4 +171,38 @@ func (h *WorkspaceGraphHandler) ConfirmAllConnections(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+// GetWorkspaceType
+// @Summary 워크스페이스 타입 조회
+// @Description 특정 워크스페이스가 존재할 경우 해당 워크스페이스의 타입을 반환합니다.
+// @Tags Workspace
+// @Produce json
+// @Param workspaceId path string true "조회할 워크스페이스 ID"
+// @Param X-User-ID header string true "사용자 ID"
+// @Success 200 {object} map[string]string "{"status": "success", "type": "generic"}"
+// @Failure 404 {object} map[string]string "{"error": "Workspace not found"}"
+// @Failure 500 {object} map[string]string "{"error": "..."}"
+// @Router /api/workspaces/{workspaceId}/type [get]
+func (h *WorkspaceGraphHandler) GetWorkspaceType(c *gin.Context) {
+	workspaceID := c.Param("workspaceId")
+	userID := c.GetHeader("X-User-ID")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "X-User-ID header is missing"})
+		return
+	}
+
+	workspaceType, exists, err := h.ws.CheckWorkspace(c.Request.Context(), workspaceID, userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check workspace: %s", err.Error())})
+		return
+	}
+
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Workspace not found or unauthorized"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "type": workspaceType})
 }

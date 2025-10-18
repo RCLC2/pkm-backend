@@ -28,6 +28,9 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	// 워크스페이스 내 모든 미확정 연결 확정
 	router.POST("/api/workspaces/:workspaceId/confirm-all", workspaceHandler.ConfirmAllConnections)
 
+	// 워크스페이스가 존재하면 타입을 반환
+	router.GET("/:workspaceId/type", workspaceHandler.GetWorkspaceType)
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
