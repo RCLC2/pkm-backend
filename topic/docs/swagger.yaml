@@ -32,6 +32,28 @@ paths:
       consumes:
       - application/json
       description: 문서와 유사한 문서 탐색
+      parameters:
+      - description: 콘텐츠
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SearchRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: 유사한 문서 탐색
+  /api/find-similar/by-id:
+    get:
+      consumes:
+      - application/json
+      description: 문서와 유사한 문서 탐색
+      parameters:
+      - description: 문서 ID
+        in: query
+        name: noteId
+        required: true
+        type: string
       produces:
       - application/json
       responses: {}

@@ -38,6 +38,39 @@
                     "application/json"
                 ],
                 "summary": "유사한 문서 탐색",
+                "parameters": [
+                    {
+                        "description": "콘텐츠",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SearchRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/find-similar/by-id": {
+            "get": {
+                "description": "문서와 유사한 문서 탐색",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "유사한 문서 탐색",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "문서 ID",
+                        "name": "noteId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {}
             }
         }

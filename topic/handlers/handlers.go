@@ -77,7 +77,8 @@ func (h *Handler) FindSimilarDocsByContent(c *gin.Context) {
 // @Description 문서와 유사한 문서 탐색
 // @Accept json
 // @Produce json
-// @Router /api/find-similar [post]
+// @Param noteId query string true "문서 ID"
+// @Router /api/find-similar/by-id [get]
 func (h *Handler) FindSimilarDocsById(c *gin.Context) {
 	docsId := c.Query("noteId")
 	if docsId == "" {
