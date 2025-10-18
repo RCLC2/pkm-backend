@@ -1,22 +1,34 @@
-FROM eclipse-temurin:21-jdk-jammy AS builder
-
+# ---------- Stage 1: Build ----------
+FROM gradle:8.10-jdk21-alpine AS builder
 WORKDIR /app
 
-COPY pom.xml .
-COPY src ./src
+# 의존성 캐시 최적화
+COPY gradlew ./
+COPY gradle ./gradle
+COPY build.gradle settings.gradle ./
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies || true
 
-RUN ./mvnw clean package -DskipTests
+# 소스 복사 및 빌드
+COPY . .
+RUN ./gradlew --no-daemon clean bootJar
 
-RUN mkdir -p target && cp $(find . -name "*.jar") target/app.jar
+# ---------- Stage 2: Runtime ----------
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
 
-FROM eclipse-temurin:21-jre-jammy
+RUN apk add --no-cache curl
 
-ARG JAR_FILE=target/app.jar
+# 빌드 산출물 복사
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+EXPOSE 8080
 
-COPY --from=builder /app/${JAR_FILE} app.jar
+ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -Xlog:gc*:file=/logs/g1-gc.log:tags,uptime,time,level -XX:+HeapDumpOnOutOfMemoryError"
 
-EXPOSE 8000
+RUN mkdir -p /logs && chmod 777 /logs
 
-ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-XX:+UseG1GC", "-Xlog:gc*:file=/logs/g1-gc.log:tags,uptime,time,level", "-XX:+HeapDumpOnOutOfMemoryError", "-jar", "/app.jar"]
+HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
+  CMD curl -fsS http://localhost:8080/actuator/health | grep '"status":"UP"' || exit 1
+
+# Spring Boot 실행
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]
