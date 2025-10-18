@@ -24,12 +24,12 @@ func NewWorkspaceService(db *mongo.Database, gs *GraphService) *WorkspaceService
 
 func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, creatorID string) (string, error) {
 	if title == "" || wsType == "" || creatorID == "" {
-		return "", errors.New("title, type, creatorID 모두 필요합니다")
+		return "", errors.New("title, type, creatorID is nil")
 	}
 
 	wsType = strings.ToLower(strings.TrimSpace(wsType))
 	if !isValidWorkspaceType(wsType) {
-		return "", fmt.Errorf("지원하지 않는 워크스페이스 타입: %s", wsType)
+		return "", fmt.Errorf("invalid workspace type: %s", wsType)
 	}
 
 	doc := bson.M{
@@ -42,7 +42,7 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, c
 
 	res, err := s.db.Collection("workspaces").InsertOne(ctx, doc)
 	if err != nil {
-		return "", fmt.Errorf("워크스페이스 생성 실패: %w", err)
+		return "", fmt.Errorf("filaed to create workspace: %w", err)
 	}
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
@@ -126,24 +126,24 @@ func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, use
 // goroutine
 func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID string, userID string, newStyle string) (string, error) {
 	if strings.TrimSpace(workspaceID) == "" {
-		return "", errors.New("workspaceID가 비어있습니다")
+		return "", errors.New("workspaceID is blank")
 	}
 	if strings.TrimSpace(newStyle) == "" {
-		return "", errors.New("newStyle이 비어있습니다")
+		return "", errors.New("newStyle is blank")
 	}
 	newStyle = strings.ToLower(strings.TrimSpace(newStyle))
 	if !isValidWorkspaceType(newStyle) {
-		return "", errors.New("지원하지 않는 스타일입니다 'zettel', 'generic', 'para' 중 하나를 선택하세요")
+		return "", errors.New("invalid workspace type. choose one styles (such as 'zettel', 'generic', 'para')")
 	}
 
 	if s.graphService == nil {
-		return "", errors.New("graphService가 주입되지 않았습니다")
+		return "", errors.New("graphService is nil")
 	}
 
 	var currentTitle *string
 	_, err := s.UpdateWorkspace(ctx, workspaceID, userID, currentTitle, &newStyle)
 	if err != nil {
-		return "", fmt.Errorf("워크스페이스 타입 업데이트 실패: %w", err)
+		return "", fmt.Errorf("failed to update workspace type: %w", err)
 	}
 
 	jobID := primitive.NewObjectID()
@@ -157,7 +157,7 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 	}
 	_, err = s.db.Collection("workspace_jobs").InsertOne(ctx, job)
 	if err != nil {
-		return "", fmt.Errorf("작업 큐 기록 생성 실패: %w", err)
+		return "", fmt.Errorf("failed to create queueing history: %w", err)
 	}
 
 	go func(jobID primitive.ObjectID, workspaceID, style string) {
@@ -186,7 +186,7 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 		)
 	}(jobID, workspaceID, newStyle)
 
-	return fmt.Sprintf("워크스페이스 타입이 '%s'로 변경되었습니다. 그래프 연결 작업은 비동기 처리됩니다. (작업ID: %s)", newStyle, jobID.Hex()), nil
+	return fmt.Sprintf("changed to workspace type: '%s'. (async works: %s)", newStyle, jobID.Hex()), nil
 }
 
 func isValidWorkspaceType(t string) bool {

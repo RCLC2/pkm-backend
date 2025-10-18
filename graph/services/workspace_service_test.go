@@ -59,15 +59,15 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 
 		_, err := service.ChangeWorkspaceStyle(ctx, "", userID, "zettel")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "workspaceID가 비어있습니다")
+		assert.Contains(mt, err.Error(), "workspaceID is blank")
 
 		_, err = service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "newStyle이 비어있습니다")
+		assert.Contains(mt, err.Error(), "newStyle is blank")
 
 		_, err = service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "unsupported")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "지원하지 않는 스타일입니다")
+		assert.Contains(mt, err.Error(), "invalid workspace-style.")
 	})
 
 	mt.Run("Error_GraphServiceNil", func(mt *mtest.T) {
@@ -79,7 +79,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, models.WorkspaceTypeZettel)
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "graphService가 주입되지 않았습니다")
+		assert.Contains(mt, err.Error(), "graphService is nil")
 	})
 
 	mt.Run("Error_UpdateWorkspaceFails", func(mt *mtest.T) {
@@ -90,6 +90,6 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 		service := services.NewWorkspaceService(mt.DB, &services.GraphService{})
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "워크스페이스 타입 업데이트 실패")
+		assert.Contains(mt, err.Error(), "failed to update workspace type.")
 	})
 }

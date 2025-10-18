@@ -41,7 +41,7 @@ func TestGraphService_NoteCreated(t *testing.T) {
 
 		connections, err := service.NoteCreated(ctx, newDocID, workspaceID)
 		assert.NoError(t, err)
-		assert.Len(t, connections, 2, "유효한 연결은 2개만 생성되어야 합니다 (자기 자신, invalid-id 스킵)")
+		assert.Len(t, connections, 2, "only 2 valid connections should be created")
 		assert.Equal(t, services.StatusPending, connections[0].Status)
 
 		assert.Equal(t, objIDFromHex(t, newDocID), connections[0].SourceID)
@@ -106,7 +106,7 @@ func TestGraphService_AutoConnectWorkspace(t *testing.T) {
 
 		connections, err := service.AutoConnectWorkspace(ctx, workspaceID)
 		assert.NoError(t, err)
-		assert.Len(t, connections, 3, "총 3개의 연결이 생성/업데이트되어야 합니다.")
+		assert.Len(t, connections, 3, "only 3 connections should be created/updated.")
 
 		assert.Equal(t, services.StatusPending, connections[0].Status)
 
@@ -152,7 +152,7 @@ func TestGraphService_AutoConnectWorkspace(t *testing.T) {
 
 		connections, err := service.AutoConnectWorkspace(ctx, workspaceID)
 		assert.NoError(t, err)
-		assert.Len(t, connections, 1, "docID2 실패로 1개 연결만 생성되어야 합니다.")
+		assert.Len(t, connections, 1, "failed to docID2, only 1 connection should be craeted.")
 		assert.Equal(t, objIDFromHex(t, docID1), connections[0].SourceID)
 		assert.Equal(t, objIDFromHex(t, docID3), connections[0].TargetID)
 	})
@@ -250,10 +250,10 @@ func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 		mt.AddMockResponses(mtest.CreateCursorResponse(0, dbName+".graph_connections", mtest.NextBatch))
 
 		response, err := service.GetWorkspaceGraphResponse(ctx, workspaceID)
-		if !assert.NoError(t, err, "Expected no error, but got: %v", err) {
+		if !assert.NoError(t, err, "expected no error, but got: %v", err) {
 			return
 		}
-		if !assert.NotNil(t, response, "Expected response not to be nil") {
+		if !assert.NotNil(t, response, "expected response not to be nil") {
 			return
 		}
 

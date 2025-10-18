@@ -12,7 +12,6 @@ import (
 func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.Engine {
 	router := gin.Default()
 
-	// 핸들러 초기화
 	graphHandler := handlers.NewGraphConnectionHandler(gs)
 	workspaceHandler := handlers.NewWorkspaceGraphHandler(gs, ws)
 
@@ -29,7 +28,6 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	// 워크스페이스 내 모든 미확정 연결 확정
 	router.POST("/api/workspaces/:workspaceId/confirm-all", workspaceHandler.ConfirmAllConnections)
 
-	// Swagger 문서
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
