@@ -67,7 +67,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 
 		_, err = service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "unsupported")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "invalid workspace-style.")
+		assert.Contains(mt, err.Error(), "invalid workspace type.")
 	})
 
 	mt.Run("Error_GraphServiceNil", func(mt *mtest.T) {
@@ -90,6 +90,6 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 		service := services.NewWorkspaceService(mt.DB, &services.GraphService{})
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "failed to update workspace type.")
+		assert.Contains(mt, err.Error(), "failed to update workspace type")
 	})
 }
