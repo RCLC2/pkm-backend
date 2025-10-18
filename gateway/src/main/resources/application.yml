@@ -1,0 +1,106 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: note_route
+          uri: lb://note-svc
+          predicates:
+            - Path=/api/notes/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: noteServiceTimeLimiter
+            - name: CircuitBreaker
+              args:
+                name: noteServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: topic_route
+          uri: lb://topic-svc
+          predicates:
+            - Path=/api/topics/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: topicServiceTimeLimiter
+            - name: CircuitBreaker
+              args:
+                name: topicServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: graph_route
+          uri: lb://graph-svc
+          predicates:
+            - Path=/api/graphs/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: default
+            - name: CircuitBreaker
+              args:
+                name: default
+                fallbackUri: forward:/fallback
+
+        - id: user_route
+          uri: lb://user-svc
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=2
+            - Logging
+            - JwtAuthentication
+            - name: TimeLimiter
+              args:
+                name: default
+            - name: CircuitBreaker
+              args:
+                name: default
+                fallbackUri: forward:/fallback
+
+circuitbreaker:
+  configs:
+    default:
+      failureRateThreshold: 50
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 10
+      minimumNumberOfCalls: 5
+      permittedNumberOfCallsInHalfOpenState: 3
+      waitDurationInOpenState: 5s
+      recordExceptions:
+        - java.io.IOException
+        - java.util.concurrent.TimeoutException
+
+    noteServiceCircuitBreaker:
+      failureRateThreshold: 60
+      slidingWindowSize: 20
+      waitDurationInOpenState: 10s
+
+    topicServiceCircuitBreaker:
+      failureRateThreshold: 70
+      slidingWindowSize: 15
+      waitDurationInOpenState: 7s
+
+timelimiter:
+  configs:
+    default:
+      timeoutDuration: 2s
+
+    noteServiceTimeLimiter:
+      timeoutDuration: 3s
+
+    topicServiceTimeLimiter:
+      timeoutDuration: 3s
