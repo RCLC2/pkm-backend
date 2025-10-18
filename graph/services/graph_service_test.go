@@ -21,12 +21,10 @@ func objIDFromHex(t *testing.T, hex string) primitive.ObjectID {
 
 func TestGraphService_NoteCreated(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-
 	workspaceID := "6517a2624a081a27e7d0f91e"
 	newDocID := "6517a2624a081a27e7d0f92a"
 	similarID1 := "6517a2624a081a27e7d0f92b"
 	similarID2 := "6517a2624a081a27e7d0f92c"
-
 	ctx := context.Background()
 
 	mt.Run("Success_CreatesPendingConnections", func(mt *mtest.T) {
@@ -39,10 +37,7 @@ func TestGraphService_NoteCreated(t *testing.T) {
 		service := services.NewGraphService(mt.DB)
 		service.FetchSimilarByID = mockFetchSimilar
 
-		mt.AddMockResponses(
-			mtest.CreateSuccessResponse(),
-			mtest.CreateSuccessResponse(),
-		)
+		mt.AddMockResponses(mtest.CreateSuccessResponse(), mtest.CreateSuccessResponse())
 
 		connections, err := service.NoteCreated(ctx, newDocID, workspaceID)
 		assert.NoError(t, err)
@@ -76,12 +71,10 @@ func TestGraphService_NoteCreated(t *testing.T) {
 
 func TestGraphService_AutoConnectWorkspace(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-
 	workspaceID := "6517a2624a081a27e7d0f91e"
 	docID1 := "6517a2624a081a27e7d0f92a"
 	docID2 := "6517a2624a081a27e7d0f92b"
 	docID3 := "6517a2624a081a27e7d0f92c"
-
 	ctx := context.Background()
 
 	mt.Run("Success_UpsertsConnections", func(mt *mtest.T) {
@@ -155,9 +148,7 @@ func TestGraphService_AutoConnectWorkspace(t *testing.T) {
 		service.FetchDocumentIDs = mockFetchDocIDs
 		service.FetchSimilarByID = mockFetchSimilar
 
-		mt.AddMockResponses(
-			mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: 1}, bson.E{Key: "nModified", Value: 1}),
-		)
+		mt.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: 1}, bson.E{Key: "nModified", Value: 1}))
 
 		connections, err := service.AutoConnectWorkspace(ctx, workspaceID)
 		assert.NoError(t, err)
@@ -175,10 +166,7 @@ func TestGraphService_ConfirmGraphConnection(t *testing.T) {
 
 	mt.Run("Success_UpdatesToConfirmed", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
-		mt.AddMockResponses(
-			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
-		)
-
+		mt.AddMockResponses(bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}})
 		err := service.ConfirmGraphConnection(ctx, sourceID, targetID)
 		assert.NoError(t, err)
 	})
@@ -198,10 +186,7 @@ func TestGraphService_ConfirmAllConnections(t *testing.T) {
 
 	mt.Run("Success_UpdatesMultipleConnections", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
-		mt.AddMockResponses(
-			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 5}, {Key: "nModified", Value: 3}},
-		)
-
+		mt.AddMockResponses(bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 5}, {Key: "nModified", Value: 3}})
 		err := service.ConfirmAllConnections(ctx, workspaceID)
 		assert.NoError(t, err)
 	})
@@ -214,10 +199,7 @@ func TestGraphService_NoteDeleted(t *testing.T) {
 
 	mt.Run("Success_DeletesRelatedConnections", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
-		mt.AddMockResponses(
-			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 0}, {Key: "deletedCount", Value: 2}},
-		)
-
+		mt.AddMockResponses(bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 0}, {Key: "deletedCount", Value: 2}})
 		err := service.NoteDeleted(ctx, docID)
 		assert.NoError(t, err)
 	})
@@ -232,48 +214,51 @@ func TestGraphService_NoteDeleted(t *testing.T) {
 
 func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-
 	workspaceID := "6517a2624a081a27e7d0f91e"
 	docID1 := objIDFromHex(t, "6517a2624a081a27e7d0f92a")
 	docID2 := objIDFromHex(t, "6517a2624a081a27e7d0f92b")
-
 	ctx := context.Background()
 
 	mt.Run("Success_ReturnsNodesAndEdges", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
+		dbName := mt.DB.Name()
+		now := time.Now()
+		nowDT := primitive.NewDateTimeFromTime(now)
 
-		cursorResponse := mtest.CreateCursorResponse(
-			1,
-			"graph_db.graph_connections",
-			mtest.FirstBatch,
-			bson.D{
+		connectionDocs := []bson.D{
+			{
 				{Key: "_id", Value: primitive.NewObjectID()},
 				{Key: "source_id", Value: docID1},
 				{Key: "target_id", Value: docID2},
 				{Key: "status", Value: services.StatusConfirmed},
 				{Key: "workspace_id", Value: workspaceID},
-				{Key: "created_at", Value: time.Now()},
-				{Key: "updated_at", Value: time.Now()},
+				{Key: "created_at", Value: nowDT},
+				{Key: "updated_at", Value: nowDT},
 			},
-			bson.D{
+			{
 				{Key: "_id", Value: primitive.NewObjectID()},
 				{Key: "source_id", Value: docID2},
 				{Key: "target_id", Value: docID1},
 				{Key: "status", Value: services.StatusEdited},
 				{Key: "workspace_id", Value: workspaceID},
-				{Key: "created_at", Value: time.Now()},
-				{Key: "updated_at", Value: time.Now()},
+				{Key: "created_at", Value: nowDT},
+				{Key: "updated_at", Value: nowDT},
 			},
-		)
-		mt.AddMockResponses(cursorResponse)
+		}
+
+		mt.AddMockResponses(mtest.CreateCursorResponse(1, dbName+".graph_connections", mtest.FirstBatch, connectionDocs...))
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, dbName+".graph_connections", mtest.NextBatch))
 
 		response, err := service.GetWorkspaceGraphResponse(ctx, workspaceID)
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
+		if !assert.NoError(t, err, "Expected no error, but got: %v", err) {
+			return
+		}
+		if !assert.NotNil(t, response, "Expected response not to be nil") {
+			return
+		}
 
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Edges, 2)
-
 		assert.Equal(t, services.StatusConfirmed, response.Edges[0].Status)
 		assert.Equal(t, services.StatusEdited, response.Edges[1].Status)
 	})

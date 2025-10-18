@@ -131,13 +131,13 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 	if strings.TrimSpace(newStyle) == "" {
 		return "", errors.New("newStyle이 비어있습니다")
 	}
-	if s.graphService == nil {
-		return "", errors.New("graphService가 주입되지 않았습니다")
-	}
-
 	newStyle = strings.ToLower(strings.TrimSpace(newStyle))
 	if !isValidWorkspaceType(newStyle) {
 		return "", errors.New("지원하지 않는 스타일입니다 'zettel', 'generic', 'para' 중 하나를 선택하세요")
+	}
+
+	if s.graphService == nil {
+		return "", errors.New("graphService가 주입되지 않았습니다")
 	}
 
 	var currentTitle *string
