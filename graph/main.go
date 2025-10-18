@@ -28,8 +28,11 @@ func main() {
 	}
 	defer client.Disconnect(context.TODO())
 
-	graphService := services.NewGraphService(client.Database(dbName))
-	router := server.NewServer(graphService)
+	db := client.Database(dbName)
+
+	graphService := services.NewGraphService(db)
+	workspaceService := services.NewWorkspaceService(db, graphService)
+	router := server.NewServer(graphService, workspaceService)
 
 	port := os.Getenv("PORT")
 	if port == "" {

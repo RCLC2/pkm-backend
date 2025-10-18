@@ -9,28 +9,29 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func NewServer(gs *services.GraphService) *gin.Engine {
+func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.Engine {
 	router := gin.Default()
 
-	graphHandler := handlers.NewGraphHandler(gs)
-
-	// 문서 분류 및 변환
-	router.POST("/api/documents/para", graphHandler.SetParaCategory)
-	router.POST("/api/documents/:documentId/zettelkasten", graphHandler.ConvertToZettelkasten)
+	graphHandler := handlers.NewGraphConnectionHandler(gs)
+	workspaceHandler := handlers.NewWorkspaceGraphHandler(gs, ws)
 
 	// 그래프 연결 관리
-	router.POST("/api/graphs/connect/pending", graphHandler.ConfirmGraphConnection)
 	router.POST("/api/graphs/connect/confirm", graphHandler.ConfirmGraphConnection)
 	router.POST("/api/graphs/connect/edit", graphHandler.EditGraphConnection)
 
-	// 워크스페이스 조회
-	router.GET("/api/workspaces/:workspaceId/zettel", graphHandler.GetWorkspaceGraph)
+	// 워크스페이스 그래프 조회
+	router.GET("/api/workspaces/:workspaceId/graph", workspaceHandler.GetWorkspaceGraph)
 
-	// 워크스페이스 내 모든 문서 자동 연결
-	router.POST("/api/workspaces/:workspaceId/connect/auto", graphHandler.AutoConnectWorkspace)
+	// 워크스페이스 타입 변환
+	router.POST("/api/workspaces/:workspaceId/change-style", workspaceHandler.ChangeWorkspaceStyle)
 
 	// 워크스페이스 내 모든 미확정 연결 확정
-	router.POST("/api/workspaces/:workspaceId/connect/confirm-all", graphHandler.ConfirmAllConnections)
+	router.POST("/api/workspaces/:workspaceId/confirm-all", workspaceHandler.ConfirmAllConnections)
+
+	// 워크스페이스가 존재하면 타입을 반환
+	router.GET("/:workspaceId/type", workspaceHandler.GetWorkspaceType)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router

@@ -1,6 +1,224 @@
 info:
   contact: {}
 paths:
+  /api/connections/confirm:
+    post:
+      consumes:
+      - application/json
+      description: 제안된(pending) 또는 편집된(edited) 문서 간의 그래프 연결을 확정(confirmed) 상태로 변경합니다.
+      parameters:
+      - description: 연결을 확정할 Source 문서 ID 및 Target 문서 ID
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            ' targetId':
+              type: string
+            sourceId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: 그래프 연결 확정
+      tags:
+      - Graph Connection
+  /api/connections/edit:
+    post:
+      consumes:
+      - application/json
+      description: 사용자가 문서 간의 연결을 수동으로 편집했음을 표시하기 위해 연결 상태를 'edited'로 변경합니다.
+      parameters:
+      - description: 편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            ' targetId':
+              type: string
+            sourceId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: 그래프 연결 편집 상태로 설정
+      tags:
+      - Graph Connection
+  /api/connections/note-deleted:
+    post:
+      consumes:
+      - application/json
+      description: 외부 노트 서비스에서 노트 삭제 시 관련 그래프 연결을 모두 삭제합니다.
+      parameters:
+      - description: 삭제된 노트 ID
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            noteId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: 노트 삭제 이벤트 처리
+      tags:
+      - Graph Connection
+  /api/workspaces:
+    post:
+      description: 새로운 워크스페이스를 생성합니다. 생성자는 X-User-ID 헤더에서 가져옵니다.
+      parameters:
+      - description: 워크스페이스 이름
+        in: body
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: 워크스페이스 타입
+        in: body
+        name: type
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 생성
+      tags:
+      - Workspace
+  /api/workspaces/{workspaceId}:
+    delete:
+      description: 워크스페이스와 해당 워크스페이스 내 모든 그래프 데이터를 삭제합니다.
+      parameters:
+      - description: 삭제할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 삭제
+      tags:
+      - Workspace
+    put:
+      description: 워크스페이스 이름이나 타입을 수정합니다.
+      parameters:
+      - description: 수정할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      - description: 새 워크스페이스 이름
+        in: body
+        name: name
+        schema:
+          type: string
+      - description: 새 워크스페이스 타입
+        in: body
+        name: type
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 수정
+      tags:
+      - Workspace
+  /api/workspaces/{workspaceId}/confirm-all:
+    post:
+      description: 특정 워크스페이스 내의 모든 'pending' 또는 'edit' 상태의 그래프 연결을 'confirmed' 상태로
+        일괄 변경합니다.
+      parameters:
+      - description: 연결을 일괄 확정할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 내 모든 '미완료' 연결 확정
+      tags:
+      - Workspace Graph
+  /api/workspaces/{workspaceId}/graph:
+    get:
+      description: 특정 워크스페이스 내 모든 문서 노드와 그 연결 관계(엣지)를 조회합니다.
+      parameters:
+      - description: 조회할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 그래프 구조 조회
+      tags:
+      - Workspace Graph
+  /api/workspaces/{workspaceId}/style:
+    post:
+      description: 워크스페이스의 스타일을 변경하고, 해당 스타일에 맞는 그래프 연결 작업을 비동기로 수행합니다.
+      parameters:
+      - description: 변경할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      - description: 새 워크스페이스 스타일 (zettel, generic, para)
+        in: body
+        name: newStyle
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: 워크스페이스 스타일 변경
+      tags:
+      - Workspace
+  /api/workspaces/{workspaceId}/type:
+    get:
+      description: 특정 워크스페이스가 존재할 경우 해당 워크스페이스의 타입을 반환합니다.
+      parameters:
+      - description: 조회할 워크스페이스 ID
+        in: path
+        name: workspaceId
+        required: true
+        type: string
+      - description: 사용자 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"status": "success", "type": "generic"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: '{"error": "Workspace not found"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{"error": "..."}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 워크스페이스 타입 조회
+      tags:
+      - Workspace
   /connections/confirm:
     post:
       consumes:
