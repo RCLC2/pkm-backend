@@ -12,7 +12,7 @@ volumes:
 
 services:
   mongodb:
-    image: mongo:7
+    image: mongo:8
     container_name: mongodb
     ports: ["27017:27017"]
     volumes:
@@ -66,7 +66,7 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     environment:
-      - JWT_SECRET=
+      - JWT_SECRET=fijofjweofjowejfoawijfwejfpijwepifjwpeijfpp
     ports:
       - "8000:8000"
     depends_on:
@@ -116,7 +116,11 @@ services:
       - PORT=8003
       - MONGO_URI=mongodb://mongodb:27017
       - MONGO_DB_NAME=graphdb
+      - YORKIE_ADDR=yorkie:8085
+      - YORKIE_ADMIN_USERNAME=admin
+      - YORKIE_ADMIN_PASSWORD=admin
       - TOPIC_SERVICE_URL=http://topic-service:8004
+      - DOCUMENT_SERVICE_URL=http://note-service:8002
     ports: ["8003:8003"]
     depends_on:
       mongodb:
@@ -170,15 +174,9 @@ services:
   yorkie:
     image: yorkieteam/yorkie:latest
     container_name: yorkie
-    command:
-      - server
-      - --hostname=0.0.0.0
-      - --rpc-port=8085                 # 컨테이너 내부 RPC 포트
-      - --mongo-connection-uri=mongodb://mongodb:27017
-      - --mongo-yorkie-database=yorkie-meta
-      - --log-level=debug             # (선택) 웹훅 트레이스 보기 좋음
+    command: ["server", "--config", "/etc/yorkie.yml"]
     ports:
-      - "8085:8085"  # FE rpcAddr: http://localhost:8085
+      - "8085:8085"
     volumes:
       - ./yorkie.yml:/etc/yorkie.yml:ro
     depends_on:

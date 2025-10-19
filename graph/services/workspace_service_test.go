@@ -55,7 +55,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	ctx := context.Background()
 
 	mt.Run("Error_InvalidInput", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil)
+		service := services.NewWorkspaceService(mt.DB, nil, nil)
 
 		_, err := service.ChangeWorkspaceStyle(ctx, "", userID, "zettel")
 		assert.Error(mt, err)
@@ -71,7 +71,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	})
 
 	mt.Run("Error_GraphServiceNil", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil)
+		service := services.NewWorkspaceService(mt.DB, nil, nil)
 
 		mt.AddMockResponses(
 			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
@@ -87,7 +87,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 			mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "update failed"}),
 		)
 
-		service := services.NewWorkspaceService(mt.DB, &services.GraphService{})
+		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil)
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 		assert.Error(mt, err)
 		assert.Contains(mt, err.Error(), "failed to update workspace type")

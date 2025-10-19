@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"graph/models"
+	"log"
 	"strings"
 	"time"
 
+	"github.com/yorkie-team/yorkie/admin"
+	"github.com/yorkie-team/yorkie/api/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,10 +19,11 @@ import (
 type WorkspaceService struct {
 	db           *mongo.Database
 	graphService *GraphService
+	yorkieAdmin  *admin.Client
 }
 
-func NewWorkspaceService(db *mongo.Database, gs *GraphService) *WorkspaceService {
-	return &WorkspaceService{db: db, graphService: gs}
+func NewWorkspaceService(db *mongo.Database, gs *GraphService, yorkieAdmin *admin.Client) *WorkspaceService {
+	return &WorkspaceService{db: db, graphService: gs, yorkieAdmin: yorkieAdmin}
 }
 
 func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, creatorID string) (string, error) {
@@ -32,18 +36,38 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, c
 		return "", fmt.Errorf("invalid workspace type: %s", wsType)
 	}
 
+	projectName := fmt.Sprintf("workspace-%s-%s", creatorID, title)
+	project, err := s.yorkieAdmin.CreateProject(ctx, projectName)
+	if err != nil {
+		return "", fmt.Errorf("failed to create yorkie project: %w", err)
+	}
+
 	doc := bson.M{
-		"title":      title,
-		"type":       wsType,
-		"creator_id": creatorID,
-		"created_at": time.Now(),
-		"updated_at": time.Now(),
+		"title":             title,
+		"type":              wsType,
+		"creator_id":        creatorID,
+		"yorkie_project_id": project.ID.String(),
+		"yorkie_public_key": project.PublicKey,
+		"yorkie_secret_key": project.SecretKey,
+		"created_at":        time.Now(),
+		"updated_at":        time.Now(),
 	}
 
 	res, err := s.db.Collection("workspaces").InsertOne(ctx, doc)
 	if err != nil {
 		return "", fmt.Errorf("filaed to create workspace: %w", err)
 	}
+
+	authWebhookURL := "http://user-service:8080/api/v1/yorkie/auth"
+	authWebhookMethods := []string{"AttachDocument", "PushPull", "WatchDocuments"}
+	_, err = s.yorkieAdmin.UpdateProject(ctx, project.ID.String(), &types.UpdatableProjectFields{
+		AuthWebhookURL:     &authWebhookURL,
+		AuthWebhookMethods: &authWebhookMethods,
+	})
+	if err != nil {
+		log.Printf("failed to set auth webhook: %v", err)
+	}
+
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
