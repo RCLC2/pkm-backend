@@ -13,17 +13,15 @@ management:
         enabled: true
 
 spring:
-  application:
-    name: api-gateway
   cloud:
     gateway:
       routes:
         - id: note_route
-          uri: lb://note-svc
+          uri: http://note-svc.rclc.svc.cluster.local:80
           predicates:
-            - Path=/api/notes/**
+            - Path=/api/v1/notes/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -34,28 +32,12 @@ spring:
                 name: noteServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
-        - id: topic_route
-          uri: lb://topic-svc
-          predicates:
-            - Path=/api/topics/**
-          filters:
-            - StripPrefix=2
-            - Logging
-            - JwtAuthentication
-            - name: TimeLimiter
-              args:
-                name: topicServiceTimeLimiter
-            - name: CircuitBreaker
-              args:
-                name: topicServiceCircuitBreaker
-                fallbackUri: forward:/fallback
-
         - id: graph_route
-          uri: lb://graph-svc
+          uri: http://graph-svc.rclc.svc.cluster.local:80
           predicates:
-            - Path=/api/graphs/**
+            - Path=/api/v1/graphs/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -67,11 +49,11 @@ spring:
                 fallbackUri: forward:/fallback
 
         - id: user_route
-          uri: lb://user-svc
+          uri: http://user-svc.rclc.svc.cluster.local:80
           predicates:
-            - Path=/api/users/**
+            - Path=/api/v1/users/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -100,18 +82,10 @@ circuitbreaker:
       slidingWindowSize: 20
       waitDurationInOpenState: 10s
 
-    topicServiceCircuitBreaker:
-      failureRateThreshold: 70
-      slidingWindowSize: 15
-      waitDurationInOpenState: 7s
-
 timelimiter:
   configs:
     default:
       timeoutDuration: 2s
 
     noteServiceTimeLimiter:
-      timeoutDuration: 3s
-
-    topicServiceTimeLimiter:
       timeoutDuration: 3s

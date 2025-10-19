@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/permission")
+@RequestMapping("/permission")
 @RequiredArgsConstructor
 public class PermissionController {
     private final PermissionService permissionService;

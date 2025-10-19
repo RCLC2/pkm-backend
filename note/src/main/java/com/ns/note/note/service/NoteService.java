@@ -21,6 +21,9 @@ import org.springframework.web.client.RestTemplate;
 import static com.ns.note.exception.ExceptionStatus.OWNER_PERMISSION_REGISTER_FAILED;
 import static com.ns.note.exception.ExceptionStatus.USER_SERVICE_ACCESS_FAILED;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class NoteService {
@@ -33,6 +36,7 @@ public class NoteService {
 
     public NoteResponseVo createNewNote(NoteRequestVo vo, String authorization) {
         NoteEntity entity = NoteEntity.builder()
+                .workspaceId(vo.workspaceId())
                 .title(vo.title())
                 .description(vo.description())
                 .contents(vo.contents())
@@ -57,8 +61,7 @@ public class NoteService {
     public NoteResponseVo updateNote(String id, NoteRequestVo vo) {
         NoteEntity note = getActiveNoteById(id);
 
-
-        note.update(vo.title(), vo.description(), vo.contents());
+        note.update(vo.workspaceId(), vo.title(), vo.description(), vo.contents());
 
         NoteEntity updatedNote = noteRepository.save(note);
 
@@ -87,6 +90,7 @@ public class NoteService {
     private NoteResponseVo NoteEntitytoNoteResponseVo(NoteEntity note) {
         return new NoteResponseVo(
                 note.getId(),
+                note.getWorkspaceId(),
                 note.getTitle(),
                 note.getDescription(),
                 note.getContents(),
@@ -104,10 +108,18 @@ public class NoteService {
                 new HttpEntity<>(new OwnerRegisterRequestDto(noteId), headers);
 
         restTemplate.exchange(
-                userBaseUrl + "/api/v1/permission/owner/register",
+                userBaseUrl + "/permission/owner/register",
                 HttpMethod.POST,
                 entity,
                 Void.class
         );
+    }
+
+    public List<String> getAllNoteIdsByWorkspace(String workspaceId) {
+        return noteRepository.findAllByWorkspaceIdAndDeletedAtIsNull(workspaceId)
+                     .stream()
+                     .map(NoteEntity::getId)
+                     .collect(Collectors.toList());
+
     }
 }

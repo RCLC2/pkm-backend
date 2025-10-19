@@ -4,6 +4,7 @@ import com.ns.note.note.entity.NoteEntity;
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface NoteRepository extends ElasticsearchRepository<NoteEntity, String> {
@@ -20,4 +21,6 @@ public interface NoteRepository extends ElasticsearchRepository<NoteEntity, Stri
         }
     """)
     Optional<NoteEntity> findByIdAndDeletedAtIsNull(String id);
+
+    List<NoteEntity> findAllByWorkspaceIdAndDeletedAtIsNull(String workspaceId);
 }

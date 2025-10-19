@@ -20,6 +20,8 @@ public class NoteEntity {
     @Id
     private String id;
 
+    private String workspaceId;
+
     @Field(type = FieldType.Text)
     private String title;
     @Field(type = FieldType.Text)
@@ -38,7 +40,8 @@ public class NoteEntity {
     @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
     private Instant deletedAt;
 
-    public void update(String title, String description, String contents) {
+    public void update(String workspaceId, String title, String description, String contents) {
+        this.workspaceId = workspaceId;
         this.title = title;
         this.description = description;
         this.contents = contents;

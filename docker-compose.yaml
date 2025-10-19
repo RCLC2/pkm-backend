@@ -120,7 +120,7 @@ services:
       - YORKIE_ADMIN_USERNAME=admin
       - YORKIE_ADMIN_PASSWORD=admin
       - TOPIC_SERVICE_URL=http://topic-service:8004
-      - DOCUMENT_SERVICE_URL=http://note-service:8002
+      - NOTE_SERVICE_URL=http://note-service:8002
     ports: ["8003:8003"]
     depends_on:
       mongodb:
