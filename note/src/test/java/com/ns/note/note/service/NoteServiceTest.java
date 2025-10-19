@@ -36,8 +36,9 @@ class NoteServiceTest {
     @Test
     void createNewNote_success() {
         // given
-        NoteRequestVo vo = new NoteRequestVo("title", "desc", "contents");
+        NoteRequestVo vo = new NoteRequestVo("1", "title", "desc", "contents");
         NoteEntity saved = NoteEntity.builder()
+        .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")
@@ -53,6 +54,7 @@ class NoteServiceTest {
         NoteResponseVo result = noteService.createNewNote(vo,"Bearer test-token");
 
         // then
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("title");
         assertThat(result.contents()).isEqualTo("contents");
         assertThat(result.description()).isEqualTo("desc");
@@ -66,6 +68,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("old")
                 .description("old")
                 .contents("old")
@@ -75,10 +78,11 @@ class NoteServiceTest {
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(existing);
 
         // when
-        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("new", "new", "new"));
+        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"));
 
         // then
         assertThat(result.id()).isEqualTo(id);
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("new");
         assertThat(result.description()).isEqualTo("new");
         assertThat(result.contents()).isEqualTo("new");
@@ -91,7 +95,7 @@ class NoteServiceTest {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
 
         // expect
-        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("t", "d", "c")))
+        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c")))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
@@ -102,6 +106,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")
@@ -114,6 +119,7 @@ class NoteServiceTest {
 
         // then
         assertThat(result.id()).isEqualTo(id);
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("title");
         assertThat(result.description()).isEqualTo("desc");
         assertThat(result.contents()).isEqualTo("contents");
@@ -136,6 +142,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")

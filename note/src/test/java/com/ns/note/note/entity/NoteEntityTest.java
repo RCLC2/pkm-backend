@@ -13,15 +13,17 @@ public class NoteEntityTest{
     void update_shouldChangeFields() {
         // given
         NoteEntity note = NoteEntity.builder()
+            .workspaceId("1")
                 .title("old title")
                 .description("old desc")
                 .contents("old contents")
                 .build();
 
         // when
-        note.update("new title", "new desc", "new contents");
+        note.update("1", "new title", "new desc", "new contents");
 
         // then
+        assertThat(note.getWorkspaceId()).isEqualTo("1");
         assertThat(note.getTitle()).isEqualTo("new title");
         assertThat(note.getDescription()).isEqualTo("new desc");
         assertThat(note.getContents()).isEqualTo("new contents");
@@ -31,6 +33,7 @@ public class NoteEntityTest{
     void softDelete_shouldSetDeletedAt() {
         // given
         NoteEntity note = NoteEntity.builder()
+                .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")

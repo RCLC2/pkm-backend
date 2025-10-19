@@ -9,12 +9,15 @@ import com.ns.note.note.vo.NoteResponseVo;
 import com.ns.note.response.GlobalResponseHandler;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import com.ns.note.response.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/note")
+@RequestMapping("/note")
 @RequiredArgsConstructor
 public class NoteController {
 
@@ -72,6 +75,13 @@ public class NoteController {
     public ResponseEntity<?> deleteNote(@PathVariable @NotBlank String id) {
         noteService.deleteNote(id);
         return GlobalResponseHandler.success(ResponseStatus.NOTE_DELETE_SUCCESS);
+    }
+
+    // 해당 워크스페이스 내의 모든 문서 ID 리스트 반환
+    @GetMapping("/ids")
+    public ResponseEntity<GlobalResponseHandler<List<String>>> getAllNoteIdsByWorkspace(@RequestParam @NotBlank String workspaceId) {
+        List<String> noteIds = noteService.getAllNoteIdsByWorkspace(workspaceId);
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS,noteIds);
     }
 
 }
