@@ -29,6 +29,7 @@ public class NoteController {
             @RequestBody NoteCreateRequestDto dto,
             @RequestHeader("Authorization") String authorization) {
         NoteRequestVo vo = new NoteRequestVo(
+                dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getContents()
@@ -46,6 +47,7 @@ public class NoteController {
     @PutMapping("/update/{id}")
     public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> updateNote(@PathVariable @NotBlank String id, @RequestBody NoteUpdateRequestDto dto) {
         NoteRequestVo vo = new NoteRequestVo(
+                dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getContents()
