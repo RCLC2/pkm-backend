@@ -10,7 +10,7 @@ Backend:
   SnapshotThreshold: 1000  
   SnapshotInterval: 3000  
   Hostname: "0.0.0.0" 
-  AuthWebhookURL: "http://user-service:8080/api/v1/yorkie/auth"  
+  AuthWebhookURL: "http://user-service:8080/yorkie/auth"
   AuthWebhookMethods:
     - AttachDocument
     - PushPull

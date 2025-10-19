@@ -71,16 +71,16 @@ public class YorkieService {
 
         // 권한 검증 (AttachDocument, WatchDocuments: 무조건 허용, PushPull: verb에 따라 rw만 허용)
         return switch (method) {
-            case "AttachDocument", "WatchDocuments" -> YorkieAuthResultVo.of(true, null);
+            case "AttachDocument", "WatchDocuments" -> YorkieAuthResultVo.of(true, "ok");
             case "PushPull" -> {
                 if (!"rw".equals(verb)) {
                     yield YorkieAuthResultVo.of(false, "READ_ONLY");
                 }
-                yield YorkieAuthResultVo.of(true, null);
+                yield YorkieAuthResultVo.of(true, "ok");
             }
 
             // (선택) 기타 서버 호출
-            case "ActivateClient" -> YorkieAuthResultVo.of(true, null);
+            case "ActivateClient" -> YorkieAuthResultVo.of(true, "ok");
             default -> YorkieAuthResultVo.of(false, "METHOD_NOT_ALLOWED");
         };
 

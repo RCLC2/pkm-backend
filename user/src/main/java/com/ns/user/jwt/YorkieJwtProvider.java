@@ -58,9 +58,9 @@ public class YorkieJwtProvider {
         try {
            return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
         } catch (ExpiredJwtException e) {
-            throw new AuthException(ExceptionStatus.AUTH_JWT_EXPIRED);
+            throw new AuthException(ExceptionStatus.AUTH_YORKIE_JWT_EXPIRED);
         } catch (IllegalArgumentException | JwtException e) {
-            throw new AuthException(ExceptionStatus.AUTH_JWT_INVALID);
+            throw new AuthException(ExceptionStatus.AUTH_YORKIE_JWT_INVALID);
         } catch (SecurityException e) {
             throw new AuthException(ExceptionStatus.UNAUTHORIZED); // 서명 오류 → 인증 불가
         }
