@@ -25,7 +25,7 @@ import java.util.Objects;
 
 
 @RestController
-@RequestMapping("/api/v1/yorkie")
+@RequestMapping("/yorkie")
 @RequiredArgsConstructor
 public class YorkieController {
 
