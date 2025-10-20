@@ -58,7 +58,7 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, c
 		return "", fmt.Errorf("filaed to create workspace: %w", err)
 	}
 
-	authWebhookURL := "http://user-service:8080/api/v1/yorkie/auth"
+	authWebhookURL := "http://user-service:8080/yorkie/auth"
 	authWebhookMethods := []string{"AttachDocument", "PushPull", "WatchDocuments"}
 	_, err = s.yorkieAdmin.UpdateProject(ctx, project.ID.String(), &types.UpdatableProjectFields{
 		AuthWebhookURL:     &authWebhookURL,

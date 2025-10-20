@@ -36,46 +36,46 @@ services:
     restart: always
     networks: [pkm-network]
 
-  elasticsearch:
-    build:
-      context: ./topic/esclient
-      dockerfile: Dockerfile
-    image: pkm-backend-elasticsearch:latest
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
-      - ES_PLUGINS_INSTALL=analysis-nori
-    ports: ["9200:9200"]
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-      - esplugs:/usr/share/elasticsearch/plugins
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"' || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 20s
-    restart: always
-    networks: [pkm-network]
+  # elasticsearch:
+  #   build:
+  #     context: ./topic/esclient
+  #     dockerfile: Dockerfile
+  #   image: pkm-backend-elasticsearch:latest
+  #   container_name: elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #     - xpack.security.enabled=false
+  #     - ES_JAVA_OPTS=-Xms1g -Xmx1g
+  #     - ES_PLUGINS_INSTALL=analysis-nori
+  #   ports: ["9200:9200"]
+  #   volumes:
+  #     - esdata:/usr/share/elasticsearch/data
+  #     - esplugs:/usr/share/elasticsearch/plugins
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"' || exit 1" ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 30
+  #     start_period: 20s
+  #   restart: always
+  #   networks: [pkm-network]
 
-  gateway-service:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    container_name: gateway-service
-    environment:
-      - JWT_SECRET=fijofjweofjowejfoawijfwejfpijwepifjwpeijfpp
-    ports:
-      - "8000:8000"
-    depends_on:
-      - user-service
-      - note-service
-      - graph-service
-      - topic-service
-    networks:
-      - pkm-network
+  # gateway-service:
+  #   build:
+  #     context: ./gateway
+  #     dockerfile: Dockerfile
+  #   container_name: gateway-service
+  #   environment:
+  #     - JWT_SECRET=fijofjweofjowejfoawijfwejfpijwepifjwpeijfpp
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - user-service
+  #     - note-service
+  #     - graph-service
+  #     - topic-service
+  #   networks:
+  #     - pkm-network
 
   user-service:
     build:
@@ -89,9 +89,9 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - JWT_SECRET=${JWT_SECRET}
-      - YORKIE_JWT_SECRET=${YORKIE_JWT_SECRET}
-      - YORKIE_WEBHOOK_SECRET=${YORKIE_WEBHOOK_SECRET}
+      - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
+      - YORKIE_JWT_SECRET=fwoifjowiejfoiawjefowejfoiwejfowiej
+      - YORKIE_WEBHOOK_SECRET=fewoifjaowiejfoiawjefoiwejfoaiwejo
     ports: ["8080:8080"]
     depends_on:
       mongodb:
@@ -107,69 +107,69 @@ services:
       retries: 5
       start_period: 20s
 
-  graph-service:
-    build:
-      context: ./graph
-      dockerfile: Dockerfile
-    container_name: graph-service
-    environment:
-      - PORT=8003
-      - MONGO_URI=mongodb://mongodb:27017
-      - MONGO_DB_NAME=graphdb
-      - YORKIE_ADDR=yorkie:8085
-      - YORKIE_ADMIN_USERNAME=admin
-      - YORKIE_ADMIN_PASSWORD=admin
-      - TOPIC_SERVICE_URL=http://topic-service:8004
-      - NOTE_SERVICE_URL=http://note-service:8002
-    ports: ["8003:8003"]
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      topic-service:
-        condition: service_started
-    restart: always
-    networks: [pkm-network]
+  # graph-service:
+  #   build:
+  #     context: ./graph
+  #     dockerfile: Dockerfile
+  #   container_name: graph-service
+  #   environment:
+  #     - PORT=8003
+  #     - MONGO_URI=mongodb://mongodb:27017
+  #     - MONGO_DB_NAME=graphdb
+  #     - YORKIE_ADDR=yorkie:8085
+  #     - YORKIE_ADMIN_USERNAME=admin
+  #     - YORKIE_ADMIN_PASSWORD=admin
+  #     - TOPIC_SERVICE_URL=http://topic-service:8004
+  #     - NOTE_SERVICE_URL=http://note-service:8002
+  #   ports: ["8003:8003"]
+  #   depends_on:
+  #     mongodb:
+  #       condition: service_healthy
+  #     topic-service:
+  #       condition: service_started
+  #   restart: always
+  #   networks: [pkm-network]
 
-  topic-service:
-    build:
-      context: ./topic
-      dockerfile: Dockerfile
-    container_name: topic-service
-    environment:
-      - SERVER_PORT=8004
-      - ELASTICSEARCH_ADDR=http://elasticsearch:9200
-      - ELASTICSEARCH_INDEX=topics
-    ports: ["8004:8004"]
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8004/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
-    restart: always
-    networks: [pkm-network]
+  # topic-service:
+  #   build:
+  #     context: ./topic
+  #     dockerfile: Dockerfile
+  #   container_name: topic-service
+  #   environment:
+  #     - SERVER_PORT=8004
+  #     - ELASTICSEARCH_ADDR=http://elasticsearch:9200
+  #     - ELASTICSEARCH_INDEX=topics
+  #   ports: ["8004:8004"]
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "curl -fsS http://localhost:8004/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 20
+  #     start_period: 40s
+  #   restart: always
+  #   networks: [pkm-network]
 
-  note-service:
-    build:
-      context: ./note
-      dockerfile: Dockerfile
-    container_name: note-service
-    environment:
-      - SERVER_PORT=8002
-      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
-      - ELASTICSEARCH_INDEX=notes
-      - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
-      - --admin-username=rclc
-      - --admin-password=rclc
-    ports: ["8002:8002"]
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    restart: always
-    networks: [pkm-network]
+  # note-service:
+  #   build:
+  #     context: ./note
+  #     dockerfile: Dockerfile
+  #   container_name: note-service
+  #   environment:
+  #     - SERVER_PORT=8002
+  #     - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
+  #     - ELASTICSEARCH_INDEX=notes
+  #     - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
+  #     - --admin-username=rclc
+  #     - --admin-password=rclc
+  #   ports: ["8002:8002"]
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
+  #   restart: always
+  #   networks: [pkm-network]
 
   yorkie:
     image: yorkieteam/yorkie:latest
