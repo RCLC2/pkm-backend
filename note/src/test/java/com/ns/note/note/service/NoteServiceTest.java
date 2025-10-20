@@ -77,8 +77,12 @@ class NoteServiceTest {
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(existing);
 
+        // 🔧 RestTemplate Mock 응답
+        when(restTemplate.exchange(anyString(), any(), any(), eq(Void.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
         // when
-        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"));
+        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"),"Bearer test-token");
 
         // then
         assertThat(result.id()).isEqualTo(id);
@@ -93,9 +97,12 @@ class NoteServiceTest {
     void updateNote_notFound_shouldThrowException() {
         // given
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
+        // 🔧 RestTemplate Mock 응답
+        when(restTemplate.exchange(anyString(), any(), any(), eq(Void.class)))
+                .thenReturn(ResponseEntity.ok().build());
 
         // expect
-        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c")))
+        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c"),"Bearer test-token"))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
@@ -115,7 +122,7 @@ class NoteServiceTest {
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
 
         // when
-        NoteResponseVo result = noteService.findNoteDetails(id);
+        NoteResponseVo result = noteService.findNoteDetails(id,"");
 
         // then
         assertThat(result.id()).isEqualTo(id);
@@ -130,7 +137,7 @@ class NoteServiceTest {
     void findNoteDetails_notFound_shouldThrowException() {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> noteService.findNoteDetails("notfound"))
+        assertThatThrownBy(() -> noteService.findNoteDetails("notfound",""))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
@@ -150,8 +157,13 @@ class NoteServiceTest {
 
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
 
+        //  RestTemplate Mock 응답
+        when(restTemplate.exchange(anyString(), any(), any(), eq(Void.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
+
         // when
-        noteService.deleteNote(id);
+        noteService.deleteNote(id,"Bearer test-token");
 
         // then
         assertThat(existing.getDeletedAt()).isNotNull();
@@ -162,7 +174,7 @@ class NoteServiceTest {
     void deleteNote_notFound_shouldThrowException() {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> noteService.deleteNote("notfound"))
+        assertThatThrownBy(() -> noteService.deleteNote("notfound","Bearer test-token"))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
