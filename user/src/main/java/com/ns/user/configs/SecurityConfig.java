@@ -29,11 +29,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(
-                                "/api/v1/auth/google/**", // 로그인/회원가입/콜백
+                                "/auth/google/**", // 로그인/회원가입/콜백
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/**",
-                                "/api/v1/yorkie/auth"
+                                "/yorkie/auth"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
