@@ -151,7 +151,7 @@ public class NoteService {
             return body.getData().getRole();
 
         }catch (HttpStatusCodeException e) { // 4xx / 5xx 모두 처리
-            throw new ServiceException(OWNER_PERMISSION_REGISTER_FAILED);
+            throw new ServiceException(NOTE_SERVICE_PERMISSION_DENIED);
         } catch (ResourceAccessException e) { // 연결 문제
             throw new ServiceException(USER_SERVICE_ACCESS_FAILED);
         }

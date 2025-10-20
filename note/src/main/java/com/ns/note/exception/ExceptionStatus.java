@@ -19,8 +19,9 @@ public enum ExceptionStatus {
     GENERAL_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "서버가 작동하지 않고 있습니다."),
     GENERAL_GATEWAY_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "서버에서 타임아웃이 발생했습니다"),
 
+    NOTE_SERVICE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "노트에 대한 권한이 없습니다."),
     OWNER_PERMISSION_REGISTER_FAILED(HttpStatus.BAD_REQUEST,"노트 소유자 권한 등록 중 오류가 발생했습니다."),
-    NOTE_SERVICE_NOT_AUTHENTICATION_ROLE(HttpStatus.BAD_REQUEST ,"접근권한이 없는 사용자입니다."),
+    NOTE_SERVICE_NOT_AUTHENTICATION_ROLE(HttpStatus.BAD_REQUEST ,"접근 권한(ROLE)이 적절하지않은 사용자입니다."),
     USER_SERVICE_ACCESS_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "USER 서비스 도메인에 접근할 수 없습니다."),
     USER_SERVICE_INVALID_ROLE(HttpStatus.BAD_REQUEST, "USER 서비스에서 잘못된 역할이 전달되었습니다.");
 
