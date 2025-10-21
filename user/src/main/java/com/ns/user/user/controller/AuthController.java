@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -38,7 +40,15 @@ public class AuthController {
                 .secure(true)
                 .path("/")
                 .sameSite("Strict")
-                .maxAge(refreshExpDays)
+                .maxAge(Duration.ofDays(refreshExpDays))
+                .build();
+
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", vo.accessToken())
+                .httpOnly(false)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMinutes(100))
                 .build();
 
         AuthResponseDto responseDto = new AuthResponseDto(vo.accessToken());
@@ -46,7 +56,8 @@ public class AuthController {
         return GlobalResponseHandler.successWithCookie(
                 ResponseStatus.AUTH_LOGIN_SUCCESS,
                 responseDto,
-                refreshCookie
+                refreshCookie,
+                accessCookie
         );
     }
 
