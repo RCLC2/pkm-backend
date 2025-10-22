@@ -35,7 +35,7 @@ public class AuthController {
     ) {
         AuthVo vo = userService.loginWithGoogle(GoogleLoginVo.of(request.getCode()));
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", vo.refreshToken())
+        ResponseCookie refreshToken = ResponseCookie.from("refreshToken", vo.refreshToken())
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -43,7 +43,7 @@ public class AuthController {
                 .maxAge(Duration.ofDays(refreshExpDays))
                 .build();
 
-        ResponseCookie accessCookie = ResponseCookie.from("accessToken", vo.accessToken())
+        ResponseCookie accessToken = ResponseCookie.from("accessToken", vo.accessToken())
                 .httpOnly(false)
                 .secure(true)
                 .sameSite("Lax")
@@ -56,26 +56,33 @@ public class AuthController {
         return GlobalResponseHandler.successWithCookie(
                 ResponseStatus.AUTH_LOGIN_SUCCESS,
                 responseDto,
-                refreshCookie,
-                accessCookie
+                refreshToken,
+                accessToken
         );
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<GlobalResponseHandler<AuthResponseDto>> refresh(
-            @CookieValue("refreshToken") String refreshToken,
-            @RequestBody RefreshTokenRequestDto request
+            @CookieValue("refreshToken") String refreshToken
     ) {
 
-        AuthVo vo = userService.refreshAccessToken(RefreshTokenVo.of(
-                request.getUserId(),
-                refreshToken));
+        AuthVo vo = userService.refreshAccessToken(RefreshTokenVo.of(refreshToken));
+
+        ResponseCookie accessToken = ResponseCookie.from("accessToken", vo.accessToken())
+                .httpOnly(false)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMinutes(100))
+                .build();
+
 
         AuthResponseDto responseDto = new AuthResponseDto(vo.accessToken());
 
-        return GlobalResponseHandler.success(
+        return GlobalResponseHandler.successWithCookie(
                 ResponseStatus.AUTH_REFRESH_SUCCESS,
-                responseDto
+                responseDto,
+                accessToken
         );
     }
 
@@ -84,16 +91,26 @@ public class AuthController {
             @AuthenticationPrincipal CurrentUser currentUser) {
         userService.logout(currentUser.id());
 
-        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+        // refresh token 쿠키 삭제
+        ResponseCookie refreshToken = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .maxAge(0)
                 .build();
 
-        return GlobalResponseHandler.successWithCookie(
+        // access token 쿠키 삭제
+        ResponseCookie accessToken = ResponseCookie.from("accessToken", "")
+                .httpOnly(false)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        return GlobalResponseHandler.expireTheCookies(
                 ResponseStatus.AUTH_LOGOUT_SUCCESS,
-                deleteCookie
+                refreshToken,
+                accessToken
         );
     }
 }

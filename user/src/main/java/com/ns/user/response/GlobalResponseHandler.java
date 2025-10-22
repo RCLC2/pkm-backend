@@ -69,19 +69,24 @@ public class GlobalResponseHandler<T> {
     /**
      * 성공 응답 생성 + 쿠키 세팅 (데이터 없음)
      */
-    public static ResponseEntity<GlobalResponseHandler<Void>> successWithCookie(
+    public static <T> ResponseEntity<GlobalResponseHandler<T>> expireTheCookies(
             ResponseStatus status,
-            ResponseCookie cookie
+            ResponseCookie... cookies
     ) {
-        return ResponseEntity.status(status.getStatusCode())
-                .header("Set-Cookie", cookie.toString())
-                .body(GlobalResponseHandler.<Void>builder()
-                        .timestamp(OffsetDateTime.now())
-                        .statusCode(status.getStatusCode())
-                        .message(status.getMessage())
-                        .data(null)
-                        .build());
+        // 여러 개의 쿠키를 Header에 동시에 추가
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(status.getStatusCode());
+        for (ResponseCookie cookie : cookies) {
+            responseBuilder.header("Set-Cookie", cookie.toString());
+        }
+
+        return responseBuilder.body(GlobalResponseHandler.<T>builder()
+                .timestamp(OffsetDateTime.now())
+                .statusCode(status.getStatusCode())
+                .message(status.getMessage())
+                .data(null)
+                .build());
     }
+
 
     /**
      * 에러 응답 생성 (Global Exception Handler에서 사용)

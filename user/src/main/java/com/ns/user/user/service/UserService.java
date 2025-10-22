@@ -57,7 +57,8 @@ public class UserService {
     }
 
     public AuthVo refreshAccessToken(RefreshTokenVo refreshVo) {
-        String savedToken = redisTemplate.opsForValue().get(REFRESH_PREFIX + refreshVo.userId());
+        String userId = jwtProvider.getUserId(refreshVo.refreshToken());
+        String savedToken = redisTemplate.opsForValue().get(REFRESH_PREFIX + userId);
 
         if (savedToken == null) throw new ServiceException(ExceptionStatus.REFRESH_TOKEN_NOT_FOUND);
         if (!savedToken.equals(refreshVo.refreshToken())) throw new ServiceException(ExceptionStatus.REFRESH_TOKEN_MISMATCH);
@@ -69,7 +70,7 @@ public class UserService {
         String name = jwtProvider.getName(refreshVo.refreshToken());
         String role = jwtProvider.getRole(refreshVo.refreshToken());
 
-        String newAccessToken = jwtProvider.generateAccessToken(refreshVo.userId(), email, name, role);
+        String newAccessToken = jwtProvider.generateAccessToken(userId, email, name, role);
         return new AuthVo(newAccessToken, null);
     }
 

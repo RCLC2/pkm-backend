@@ -33,7 +33,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/**",
-                                "/yorkie/auth"
+                                "/yorkie/auth",
+                                "/auth/refresh"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
