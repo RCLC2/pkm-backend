@@ -1,6 +1,7 @@
 package com.ns.note.note.repository;
 
 import com.ns.note.note.entity.NoteEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
@@ -25,44 +26,29 @@ public interface NoteRepository extends ElasticsearchRepository<NoteEntity, Stri
     List<NoteEntity> findAllByWorkspaceIdAndDeletedAtIsNull(String workspaceId);
 
     @Query("""
-        {
-          "size": "?2",
-          "query": {
-            "bool": {
-              "must": [
-                { "term": { "workspaceId": "?0" } }
-              ],
-              "must_not": [
-                { "exists": { "field": "deletedAt" } }
-              ],
-              "should": [
-                { "match": { "title": "?1" } },
-                { "match": { "contents": "?1" } }
-              ],
-              "minimum_should_match": 1
+    {
+      "bool": {
+        "filter": [
+          { "term": { "workspaceId.keyword": "?0" } }
+        ],
+        "must_not": [
+          { "exists": { "field": "deletedAt" } }
+        ],
+        "should": [
+          {
+            "multi_match": {
+              "query": "?1",
+              "fields": ["title^3", "contents"],
+              "type": "best_fields"
             }
           }
-        }
+        ],
+        "minimum_should_match": 0
+      }
+    }
     """)
-    List<NoteEntity> searchByKeywordAndWorkspaceId(String workspaceId, String keyword, Integer limit);
+    List<NoteEntity> searchByKeywordAndWorkspaceId(String workspaceId, String keyword, Pageable pageable);
 
-    @Query("""
-        {
-          "size": "?1",
-          "query": {
-            "bool": {
-              "must": [
-                { "term": { "workspaceId": "?0" } }
-              ],
-              "must_not": [
-                { "exists": { "field": "deletedAt" } }
-              ]
-            }
-          },
-          "sort": [
-            { "updatedAt": { "order": "desc" } }
-          ]
-        }
-    """)
-    List<NoteEntity> findRecentByWorkspaceId(String workspaceId, Integer limit);
+    List<NoteEntity> findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(String workspaceId, Pageable pageable);
+
 }

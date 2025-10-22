@@ -8,7 +8,9 @@ import com.ns.note.note.repository.NoteRepository;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,6 +26,7 @@ import static com.ns.note.exception.ExceptionStatus.USER_SERVICE_ACCESS_FAILED;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoteService {
@@ -124,16 +127,18 @@ public class NoteService {
 
     }
 
-    public List<NoteResponseVo> searchNotesByKeyword(String workspaceId, String keyword, Integer limit) {
-        List<NoteEntity> entities = noteRepository.searchByKeywordAndWorkspaceId(workspaceId, keyword, limit);
+    public List<NoteResponseVo> searchNotesByKeyword(String workspaceId, String keyword, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, keyword='{}', Pageable={}", workspaceId, keyword, pageable.toString());
+        List<NoteEntity> entities = noteRepository.searchByKeywordAndWorkspaceId(workspaceId, keyword, pageable);
 
         return entities.stream()
                 .map(this::NoteEntitytoNoteResponseVo)
                 .collect(Collectors.toList());
     }
 
-    public List<NoteResponseVo> findRecentUpdatedNotes(String workspaceId, Integer limit) {
-        List<NoteEntity> entities = noteRepository.findRecentByWorkspaceId(workspaceId, limit);
+    public List<NoteResponseVo> findRecentUpdatedNotes(String workspaceId, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, Pageable={}", workspaceId, pageable.toString());
+        List<NoteEntity> entities = noteRepository.findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(workspaceId, pageable);
 
         return entities.stream()
                 .map(this::NoteEntitytoNoteResponseVo)

@@ -18,6 +18,7 @@ public class NoteEntity {
     @Id
     private String id;
 
+    @Field(type = FieldType.Keyword)
     private String workspaceId;
 
     @Field(type = FieldType.Text, analyzer = "nori_analyzer")
