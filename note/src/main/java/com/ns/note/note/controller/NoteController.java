@@ -3,18 +3,24 @@ package com.ns.note.note.controller;
 import com.ns.note.note.dto.request.NoteCreateRequestDto;
 import com.ns.note.note.dto.request.NoteUpdateRequestDto;
 import com.ns.note.note.dto.response.NoteResponseDto;
+import com.ns.note.note.dto.response.NoteSummaryResponseDto;
 import com.ns.note.note.service.NoteService;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import com.ns.note.response.GlobalResponseHandler;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.ResponseEntity;
 import com.ns.note.response.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/note")
+@RequestMapping("/note")
 @RequiredArgsConstructor
 public class NoteController {
 
@@ -26,6 +32,7 @@ public class NoteController {
             @RequestBody NoteCreateRequestDto dto,
             @RequestHeader("Authorization") String authorization) {
         NoteRequestVo vo = new NoteRequestVo(
+                dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getContents()
@@ -43,6 +50,7 @@ public class NoteController {
     @PutMapping("/update/{id}")
     public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> updateNote(@PathVariable @NotBlank String id, @RequestBody NoteUpdateRequestDto dto) {
         NoteRequestVo vo = new NoteRequestVo(
+                dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getContents()
@@ -74,4 +82,36 @@ public class NoteController {
         return GlobalResponseHandler.success(ResponseStatus.NOTE_DELETE_SUCCESS);
     }
 
+    // 해당 워크스페이스 내의 모든 문서 ID 리스트 반환
+    @GetMapping("/ids")
+    public ResponseEntity<GlobalResponseHandler<List<String>>> getAllNoteIdsByWorkspace(@RequestParam @NotBlank String workspaceId) {
+        List<String> noteIds = noteService.getAllNoteIdsByWorkspace(workspaceId);
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS,noteIds);
+    }
+
+    // 문자열 keyword 기반 검색
+    @GetMapping("/search")
+    public ResponseEntity<GlobalResponseHandler<List<NoteSummaryResponseDto>>> searchNotesByKeyword(
+            @RequestParam @NotBlank String workspaceId,
+            @RequestParam @NotBlank String keyword,
+            @RequestParam(defaultValue = "10") @NotNull Integer limit) {
+        List<NoteResponseVo> noteVos = noteService.searchNotesByKeyword(workspaceId, keyword, limit);
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS, noteVos.stream()
+                        .map(NoteSummaryResponseDto::from)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    // 가장 최근에 변경된 문서 목록
+    @GetMapping("/recent")
+    public ResponseEntity<GlobalResponseHandler<List<NoteSummaryResponseDto>>> findRecentUpdatedNotes(
+            @RequestParam @NotBlank String workspaceId,
+            @RequestParam(defaultValue = "10") @NotNull Integer limit) {
+
+        List<NoteResponseVo> noteVos = noteService.findRecentUpdatedNotes(workspaceId, limit);
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS, noteVos.stream()
+                        .map(NoteSummaryResponseDto::from)
+                        .collect(Collectors.toList())
+        );
+    }
 }

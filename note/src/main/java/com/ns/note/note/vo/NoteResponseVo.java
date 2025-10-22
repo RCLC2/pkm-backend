@@ -5,6 +5,7 @@ import java.time.Instant;
 // 노트 정보 반환 Vo
 public record NoteResponseVo(
         String id,
+        String workspaceId,
         String title,
         String description,
         String contents,
@@ -13,6 +14,7 @@ public record NoteResponseVo(
 ) {
     public static NoteResponseVo of(
             String id,
+            String workspaceId,
             String title,
             String description,
             String contents,
@@ -21,6 +23,7 @@ public record NoteResponseVo(
     ){
         return new NoteResponseVo(
                 id,
+                workspaceId,
                 title,
                 description,
                 contents,

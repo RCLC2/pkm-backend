@@ -36,7 +36,7 @@ class NoteServiceTest {
     @Test
     void createNewNote_success() {
         // given
-        NoteRequestVo vo = new NoteRequestVo("title", "desc", "contents");
+        NoteRequestVo vo = new NoteRequestVo("1", "title", "desc", "contents");
         NoteEntity saved = NoteEntity.builder()
                 .title("title")
                 .description("desc")
@@ -75,7 +75,7 @@ class NoteServiceTest {
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(existing);
 
         // when
-        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("new", "new", "new"));
+        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"));
 
         // then
         assertThat(result.id()).isEqualTo(id);
@@ -91,7 +91,7 @@ class NoteServiceTest {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
 
         // expect
-        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("t", "d", "c")))
+        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c")))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }

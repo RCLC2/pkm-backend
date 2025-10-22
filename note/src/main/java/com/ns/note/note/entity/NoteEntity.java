@@ -4,13 +4,11 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.elasticsearch.annotations.DateFormat;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.Instant;
 
+@Setting(settingPath = "elasticsearch/note-settings.json")
 @Document(indexName = "note")
 @Getter
 @NoArgsConstructor
@@ -20,11 +18,13 @@ public class NoteEntity {
     @Id
     private String id;
 
-    @Field(type = FieldType.Text)
+    private String workspaceId;
+
+    @Field(type = FieldType.Text, analyzer = "nori_analyzer")
     private String title;
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "nori_analyzer")
     private String description;
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "nori_analyzer")
     private String contents;
 
     @CreatedDate
@@ -38,7 +38,8 @@ public class NoteEntity {
     @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
     private Instant deletedAt;
 
-    public void update(String title, String description, String contents) {
+    public void update(String workspaceId, String title, String description, String contents) {
+        this.workspaceId = workspaceId;
         this.title = title;
         this.description = description;
         this.contents = contents;

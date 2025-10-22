@@ -19,7 +19,7 @@ public class NoteEntityTest{
                 .build();
 
         // when
-        note.update("new title", "new desc", "new contents");
+        note.update("1", "new title", "new desc", "new contents");
 
         // then
         assertThat(note.getTitle()).isEqualTo("new title");

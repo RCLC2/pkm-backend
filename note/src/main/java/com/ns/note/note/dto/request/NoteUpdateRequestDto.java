@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NoteUpdateRequestDto {
+    private String workspaceId;
     private String title;
     private String description;
     private String contents;
