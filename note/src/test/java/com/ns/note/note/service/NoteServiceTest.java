@@ -3,6 +3,7 @@ package com.ns.note.note.service;
 
 import com.ns.note.exception.ExceptionStatus;
 import com.ns.note.exception.ServiceException;
+import com.ns.note.note.dto.response.ResponseHandlerDto;
 import com.ns.note.note.entity.NoteEntity;
 import com.ns.note.note.repository.NoteRepository;
 import com.ns.note.note.vo.NoteRequestVo;
@@ -77,8 +78,21 @@ class NoteServiceTest {
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
         when(noteRepository.save(any(NoteEntity.class))).thenReturn(existing);
 
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
+
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
+
         // when
-        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"));
+        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"),"Bearer test-token");
 
         // then
         assertThat(result.id()).isEqualTo(id);
@@ -93,9 +107,21 @@ class NoteServiceTest {
     void updateNote_notFound_shouldThrowException() {
         // given
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
+        // 🔧 RestTemplate Mock 응답
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
 
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
         // expect
-        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c")))
+        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c"),"Bearer test-token"))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
@@ -113,9 +139,21 @@ class NoteServiceTest {
                 .build();
 
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
+
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
 
         // when
-        NoteResponseVo result = noteService.findNoteDetails(id);
+        NoteResponseVo result = noteService.findNoteDetails(id,"");
 
         // then
         assertThat(result.id()).isEqualTo(id);
@@ -129,8 +167,19 @@ class NoteServiceTest {
     @Test
     void findNoteDetails_notFound_shouldThrowException() {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
 
-        assertThatThrownBy(() -> noteService.findNoteDetails("notfound"))
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
+        assertThatThrownBy(() -> noteService.findNoteDetails("notfound",""))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
@@ -150,8 +199,22 @@ class NoteServiceTest {
 
         when(noteRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(existing));
 
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
+
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
+
+
         // when
-        noteService.deleteNote(id);
+        noteService.deleteNote(id,"Bearer test-token");
 
         // then
         assertThat(existing.getDeletedAt()).isNotNull();
@@ -161,8 +224,19 @@ class NoteServiceTest {
     @Test
     void deleteNote_notFound_shouldThrowException() {
         when(noteRepository.findByIdAndDeletedAtIsNull("notfound")).thenReturn(Optional.empty());
+        ResponseHandlerDto.PermissionMeResponseDto permission =
+                new ResponseHandlerDto.PermissionMeResponseDto("123", "user-1", "OWNER");
 
-        assertThatThrownBy(() -> noteService.deleteNote("notfound"))
+        ResponseHandlerDto mockResponse =
+                new ResponseHandlerDto(200, "SUCCESS", permission);
+
+        when(restTemplate.exchange(
+                anyString(),
+                any(),
+                any(),
+                eq(ResponseHandlerDto.class))
+        ).thenReturn(ResponseEntity.ok(mockResponse));
+        assertThatThrownBy(() -> noteService.deleteNote("notfound","Bearer test-token"))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }

@@ -45,7 +45,11 @@ public class NoteController {
 
     // 노트 수정
     @PutMapping("/update/{id}")
-    public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> updateNote(@PathVariable @NotBlank String id, @RequestBody NoteUpdateRequestDto dto) {
+    public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> updateNote(
+            @PathVariable @NotBlank String id,
+            @RequestBody NoteUpdateRequestDto dto,
+            @RequestHeader("Authorization") String authorization) {
+
         NoteRequestVo vo = new NoteRequestVo(
                 dto.getWorkspaceId(),
                 dto.getTitle(),
@@ -53,7 +57,7 @@ public class NoteController {
                 dto.getContents()
         );
 
-        NoteResponseVo note = noteService.updateNote(id, vo);
+        NoteResponseVo note = noteService.updateNote(id, vo, authorization);
 
         return GlobalResponseHandler.success(
                 ResponseStatus.NOTE_UPDATE_SUCCESS,
@@ -63,8 +67,10 @@ public class NoteController {
 
     // 노트 상세 조회 (id)
     @GetMapping("/{id}")
-    public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> findNoteDetails(@PathVariable @NotBlank String id) {
-        NoteResponseVo note = noteService.findNoteDetails(id);
+    public  ResponseEntity<GlobalResponseHandler<NoteResponseDto>> findNoteDetails(
+            @PathVariable @NotBlank String id,
+            @RequestHeader("Authorization") String authorization) {
+        NoteResponseVo note = noteService.findNoteDetails(id, authorization);
 
         return GlobalResponseHandler.success(
                 ResponseStatus.NOTE_SEARCH_SUCCESS,
@@ -74,14 +80,17 @@ public class NoteController {
 
     // 노트 삭제 (소프트)
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteNote(@PathVariable @NotBlank String id) {
-        noteService.deleteNote(id);
+    public ResponseEntity<GlobalResponseHandler<Void>> deleteNote(
+            @PathVariable @NotBlank String id,
+            @RequestHeader("Authorization") String authorization) {
+        noteService.deleteNote(id, authorization);
         return GlobalResponseHandler.success(ResponseStatus.NOTE_DELETE_SUCCESS);
     }
 
     // 해당 워크스페이스 내의 모든 문서 ID 리스트 반환
     @GetMapping("/ids")
-    public ResponseEntity<GlobalResponseHandler<List<String>>> getAllNoteIdsByWorkspace(@RequestParam @NotBlank String workspaceId) {
+    public ResponseEntity<GlobalResponseHandler<List<String>>> getAllNoteIdsByWorkspace(
+            @RequestParam @NotBlank String workspaceId) {
         List<String> noteIds = noteService.getAllNoteIdsByWorkspace(workspaceId);
         return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS,noteIds);
     }

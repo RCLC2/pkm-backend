@@ -16,8 +16,8 @@ public class CorsConfig {
 
         // 허용 주소
         config.setAllowedOrigins(List.of(
-                "http://localhost:3000",   // 로컬 개발 환경
-                "http://127.0.0.1:3000"    // 혹시 다른 호스트명으로 접근할 경우 대비
+                "http://localhost:5173",   // 로컬 개발 환경
+                "http://127.0.0.1:5173"    // 혹시 다른 호스트명으로 접근할 경우 대비
         ));
         // 허용 메소드
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
