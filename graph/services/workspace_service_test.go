@@ -3,12 +3,14 @@ package services_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"graph/models"
 	"graph/services"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
@@ -55,7 +57,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	ctx := context.Background()
 
 	mt.Run("Error_InvalidInput", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil)
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
 
 		_, err := service.ChangeWorkspaceStyle(ctx, "", userID, "zettel")
 		assert.Error(mt, err)
@@ -71,7 +73,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	})
 
 	mt.Run("Error_GraphServiceNil", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil)
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
 
 		mt.AddMockResponses(
 			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
@@ -87,9 +89,93 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 			mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "update failed"}),
 		)
 
-		service := services.NewWorkspaceService(mt.DB, &services.GraphService{})
+		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil, "")
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 		assert.Error(mt, err)
 		assert.Contains(mt, err.Error(), "failed to update workspace type")
+	})
+
+	mt.Run("Error_InsertJobFails", func(mt *mtest.T) {
+		mt.AddMockResponses(
+			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
+			mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "insert job failed"}),
+		)
+
+		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil, "")
+		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
+		assert.Error(mt, err)
+		assert.Contains(mt, err.Error(), "failed to create queueing history")
+	})
+}
+
+func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	ctx := context.Background()
+	const testUserID = "user-abc-123"
+
+	mt.Run("Success_FindsMultipleWorkspaces", func(mt *mtest.T) {
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		wsID1 := primitive.NewObjectID()
+		wsID2 := primitive.NewObjectID()
+		now := time.Now()
+
+		// todo
+		first := mtest.CreateCursorResponse(1, "testdb.workspaces", mtest.FirstBatch, bson.D{
+			{Key: "_id", Value: wsID1},
+			{Key: "title", Value: "Workspace A"},
+			{Key: "type", Value: models.WorkspaceTypeGeneric},
+			{Key: "user_id", Value: testUserID},
+			{Key: "yorkie_project_id", Value: "proj-a"},
+			{Key: "created_at", Value: now},
+		})
+		second := mtest.CreateCursorResponse(1, "testdb.workspaces", mtest.NextBatch, bson.D{
+			{Key: "_id", Value: wsID2},
+			{Key: "title", Value: "Workspace B"},
+			{Key: "type", Value: models.WorkspaceTypeZettel},
+			{Key: "user_id", Value: testUserID},
+			{Key: "yorkie_project_id", Value: "proj-b"},
+			{Key: "created_at", Value: now},
+		})
+		end := mtest.CreateCursorResponse(0, "testdb.workspaces", mtest.NextBatch)
+
+		mt.AddMockResponses(first, second, end)
+
+		workspaces, err := service.FindAllWorkspacesByUserID(ctx, testUserID)
+		assert.NoError(mt, err)
+		assert.Len(mt, workspaces, 2)
+
+		assert.Equal(mt, "Workspace A", workspaces[0].Title)
+		assert.Equal(mt, "Workspace B", workspaces[1].Title)
+		assert.Equal(mt, testUserID, workspaces[0].UserID)
+	})
+
+	mt.Run("Success_NoWorkspacesFound", func(mt *mtest.T) {
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, "testdb.workspaces", mtest.FirstBatch))
+
+		workspaces, err := service.FindAllWorkspacesByUserID(ctx, "non-existent-user")
+		assert.NoError(mt, err)
+		assert.Empty(mt, workspaces)
+	})
+
+	mt.Run("Error_BlankUserID", func(mt *mtest.T) {
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		workspaces, err := service.FindAllWorkspacesByUserID(ctx, "")
+		assert.Error(mt, err)
+		assert.Nil(mt, workspaces)
+		assert.Contains(mt, err.Error(), "userID is blank")
+	})
+
+	mt.Run("Error_MongoFindFails", func(mt *mtest.T) {
+		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		mt.AddMockResponses(mtest.CreateCommandErrorResponse(mtest.CommandError{
+			Code:    1,
+			Message: "internal server error",
+		}))
+
+		workspaces, err := service.FindAllWorkspacesByUserID(ctx, testUserID)
+		assert.Error(mt, err)
+		assert.Nil(mt, workspaces)
+		assert.Contains(mt, err.Error(), "failed to find workspaces")
 	})
 }

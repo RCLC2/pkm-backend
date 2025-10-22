@@ -13,12 +13,25 @@ const (
 )
 
 type Workspace struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title     string             `bson:"title" json:"title"`
-	Type      string             `bson:"type" json:"type"` // generic, para, zettel
-	UserID    string             `bson:"user_id" json:"userId"`
-	CreatedAt time.Time          `bson:"created_at" json:"createdAt"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updatedAt"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title           string             `bson:"title" json:"title"`
+	Type            string             `bson:"type" json:"type"` // generic, para, zettel
+	UserID          string             `bson:"user_id" json:"userId"`
+	YorkieProjectID string             `bson:"yorkie_project_id" json:"yorkieProjectId"`
+	YorkiePublicKey string             `bson:"yorkie_public_key" json:"yorkiePublicKey"`
+	YorkieSecretKey string             `bson:"yorkie_secret_key" json:"yorkieSecretKey"`
+	CreatedAt       time.Time          `bson:"created_at" json:"createdAt"`
+	UpdatedAt       time.Time          `bson:"updated_at" json:"updatedAt"`
+}
+
+// async job that change the workspace styles
+type WorkspaceJob struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	WorkspaceID string             `bson:"workspace_id" json:"workspaceId"`
+	Type        string             `bson:"type" json:"type"`
+	Status      string             `bson:"status" json:"status"` // "pending", "success", "failed"
+	CreatedAt   time.Time          `bson:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updatedAt"`
 }
 
 type GraphConnection struct {

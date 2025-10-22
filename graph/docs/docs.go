@@ -15,331 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/connections/confirm": {
-            "post": {
-                "description": "제안된(pending) 또는 편집된(edited) 문서 간의 그래프 연결을 확정(confirmed) 상태로 변경합니다.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Graph Connection"
-                ],
-                "summary": "그래프 연결 확정",
-                "parameters": [
-                    {
-                        "description": "연결을 확정할 Source 문서 ID 및 Target 문서 ID",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                " targetId": {
-                                    "type": "string"
-                                },
-                                "sourceId": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/connections/edit": {
-            "post": {
-                "description": "사용자가 문서 간의 연결을 수동으로 편집했음을 표시하기 위해 연결 상태를 'edited'로 변경합니다.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Graph Connection"
-                ],
-                "summary": "그래프 연결 편집 상태로 설정",
-                "parameters": [
-                    {
-                        "description": "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                " targetId": {
-                                    "type": "string"
-                                },
-                                "sourceId": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/connections/note-deleted": {
-            "post": {
-                "description": "외부 노트 서비스에서 노트 삭제 시 관련 그래프 연결을 모두 삭제합니다.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Graph Connection"
-                ],
-                "summary": "노트 삭제 이벤트 처리",
-                "parameters": [
-                    {
-                        "description": "삭제된 노트 ID",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "noteId": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces": {
-            "post": {
-                "description": "새로운 워크스페이스를 생성합니다. 생성자는 X-User-ID 헤더에서 가져옵니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace"
-                ],
-                "summary": "워크스페이스 생성",
-                "parameters": [
-                    {
-                        "description": "워크스페이스 이름",
-                        "name": "name",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "워크스페이스 타입",
-                        "name": "type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces/{workspaceId}": {
-            "put": {
-                "description": "워크스페이스 이름이나 타입을 수정합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace"
-                ],
-                "summary": "워크스페이스 수정",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "수정할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "새 워크스페이스 이름",
-                        "name": "name",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "새 워크스페이스 타입",
-                        "name": "type",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {}
-            },
-            "delete": {
-                "description": "워크스페이스와 해당 워크스페이스 내 모든 그래프 데이터를 삭제합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace"
-                ],
-                "summary": "워크스페이스 삭제",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "삭제할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces/{workspaceId}/confirm-all": {
-            "post": {
-                "description": "특정 워크스페이스 내의 모든 'pending' 또는 'edit' 상태의 그래프 연결을 'confirmed' 상태로 일괄 변경합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace Graph"
-                ],
-                "summary": "워크스페이스 내 모든 '미완료' 연결 확정",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "연결을 일괄 확정할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces/{workspaceId}/graph": {
-            "get": {
-                "description": "특정 워크스페이스 내 모든 문서 노드와 그 연결 관계(엣지)를 조회합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace Graph"
-                ],
-                "summary": "워크스페이스 그래프 구조 조회",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "조회할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces/{workspaceId}/style": {
-            "post": {
-                "description": "워크스페이스의 스타일을 변경하고, 해당 스타일에 맞는 그래프 연결 작업을 비동기로 수행합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace"
-                ],
-                "summary": "워크스페이스 스타일 변경",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "변경할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "새 워크스페이스 스타일 (zettel, generic, para)",
-                        "name": "newStyle",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/workspaces/{workspaceId}/type": {
-            "get": {
-                "description": "특정 워크스페이스가 존재할 경우 해당 워크스페이스의 타입을 반환합니다.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Workspace"
-                ],
-                "summary": "워크스페이스 타입 조회",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "조회할 워크스페이스 ID",
-                        "name": "workspaceId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "사용자 ID",
-                        "name": "X-User-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{\"status\": \"success\", \"type\": \"generic\"}",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "{\"error\": \"Workspace not found\"}",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "{\"error\": \"...\"}",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/connections/confirm": {
             "post": {
                 "description": "제안된(pending) 또는 편집된(edited) 문서 간의 그래프 연결을 확정(confirmed) 상태로 변경합니다.",
@@ -410,9 +85,9 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/documents/{documentId}/para": {
+        "/connections/note-deleted": {
             "post": {
-                "description": "특정 문서를 PARA(Projects, Areas, Resources, Archives) 시스템의 카테고리로 지정합니다.",
+                "description": "외부 노트 서비스에서 노트 삭제 시 관련 그래프 연결을 모두 삭제합니다.",
                 "consumes": [
                     "application/json"
                 ],
@@ -420,26 +95,19 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Document"
+                    "Graph Connection"
                 ],
-                "summary": "문서에 PARA 카테고리 설정",
+                "summary": "노트 삭제 이벤트 처리",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "카테고리를 설정할 문서 ID",
-                        "name": "documentId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Category (e.g., Project, Area)",
+                        "description": "삭제된 노트 ID",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "category": {
+                                "noteId": {
                                     "type": "string"
                                 }
                             }
@@ -449,42 +117,109 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/documents/{documentId}/zettelkasten": {
-            "post": {
-                "description": "특정 문서에서 기존에 설정된 PARA 카테고리 정보를 제거하여 제텔카스텐(Zettelkasten) 방식으로 전환합니다.",
+        "/workspaces": {
+            "get": {
+                "description": "X-User-ID 헤더에서 사용자 ID를 가져와, 해당 사용자가 소유하거나 접근 가능한 모든 워크스페이스 목록을 반환합니다.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Document"
+                    "Workspace"
                 ],
-                "summary": "문서를 제텔카스텐 형식으로 변환 (PARA 카테고리 제거)",
+                "summary": "사용자가 접근 가능한 모든 워크스페이스 조회",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "변환할 문서 ID",
-                        "name": "documentId",
-                        "in": "path",
+                        "description": "사용자 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "post": {
+                "description": "새로운 워크스페이스를 생성합니다. 생성자는 X-User-ID 헤더에서 가져옵니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace"
+                ],
+                "summary": "워크스페이스 생성",
+                "parameters": [
+                    {
+                        "description": "워크스페이스 이름",
+                        "name": "name",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "워크스페이스 타입",
+                        "name": "type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {}
             }
         },
-        "/workspaces/{workspaceId}/autoconnect": {
-            "post": {
-                "description": "워크스페이스의 모든 문서를 분석하여 유사한 문서 쌍을 찾아 'pending' 상태의 백링크를 자동으로 생성합니다.",
+        "/workspaces/{workspaceId}": {
+            "put": {
+                "description": "워크스페이스 이름이나 타입을 수정합니다.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Workspace Graph"
+                    "Workspace"
                 ],
-                "summary": "워크스페이스 문서 자동 연결 (PARA -\u003e Zettelkasten 변환 단계)",
+                "summary": "워크스페이스 수정",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "자동 연결을 수행할 워크스페이스 ID",
+                        "description": "수정할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "새 워크스페이스 이름",
+                        "name": "name",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "새 워크스페이스 타입",
+                        "name": "type",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "워크스페이스와 해당 워크스페이스 내 모든 그래프 데이터를 삭제합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace"
+                ],
+                "summary": "워크스페이스 삭제",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "삭제할 워크스페이스 ID",
                         "name": "workspaceId",
                         "in": "path",
                         "required": true
@@ -535,6 +270,94 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/workspaces/{workspaceId}/style": {
+            "post": {
+                "description": "워크스페이스의 스타일을 변경하고, 해당 스타일에 맞는 그래프 연결 작업을 비동기로 수행합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace"
+                ],
+                "summary": "워크스페이스 스타일 변경",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "변경할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "새 워크스페이스 스타일 (zettel, generic, para)",
+                        "name": "newStyle",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/workspaces/{workspaceId}/type": {
+            "get": {
+                "description": "특정 워크스페이스가 존재할 경우 해당 워크스페이스의 타입을 반환합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workspace"
+                ],
+                "summary": "워크스페이스 타입 조회",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "조회할 워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "사용자 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"status\": \"success\", \"type\": \"generic\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "{\"error\": \"Workspace not found\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "{\"error\": \"...\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     }

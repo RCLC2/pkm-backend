@@ -45,7 +45,7 @@ func NewGraphService(db *mongo.Database) *GraphService {
 }
 
 func fetchDocumentIDsHTTP(ctx context.Context, workspaceID string) ([]string, error) {
-	apiURL := fmt.Sprintf("%s/api/workspaces/%s/document-ids", documentUrl, workspaceID)
+	apiURL := fmt.Sprintf("%s/workspaces/%s/document-ids", documentUrl, workspaceID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
@@ -87,7 +87,7 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 		return nil, fmt.Errorf("failed to marshal content request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/api/find-similar", bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/find-similar", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create content request: %w", err)
 	}
@@ -97,7 +97,7 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 }
 
 func fetchSimilarDocsByIDHTTP(ctx context.Context, docID string, topN int) ([]string, error) {
-	u, err := url.Parse(topicUrl + "/api/find-similar")
+	u, err := url.Parse(topicUrl + "/find-similar")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse topic service URL: %w", err)
 	}

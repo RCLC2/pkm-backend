@@ -23,7 +23,7 @@ func NewGraphConnectionHandler(gs *services.GraphService) *GraphConnectionHandle
 // @Accept json
 // @Produce json
 // @Param request body object{sourceId=string, targetId=string} true "연결을 확정할 Source 문서 ID 및 Target 문서 ID"
-// @Router /api/connections/confirm [post]
+// @Router /connections/confirm [post]
 func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 	var req struct {
 		SourceID string `json:"sourceId" binding:"required"`
@@ -47,7 +47,7 @@ func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{sourceId=string, targetId=string} true "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID"
-// @Router /api/connections/edit [post]
+// @Router /connections/edit [post]
 func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 	var req struct {
 		SourceID string `json:"sourceId" binding:"required"`
@@ -71,7 +71,7 @@ func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{noteId=string} true "삭제된 노트 ID"
-// @Router /api/connections/note-deleted [post]
+// @Router /connections/note-deleted [post]
 func (h *GraphConnectionHandler) DeleteNoteGraph(c *gin.Context) {
 	var req struct {
 		NoteID string `json:"noteId" binding:"required"`
