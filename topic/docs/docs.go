@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/extract-tags": {
+        "/extract-tags": {
             "post": {
                 "description": "문서 내에서 빈도 기반 토큰화, 상위 N개의 태그를 반환",
                 "consumes": [
@@ -39,7 +39,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/find-similar": {
+        "/find-similar/by-content": {
             "post": {
                 "description": "문서와 유사한 문서 탐색",
                 "consumes": [
@@ -63,7 +63,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/find-similar/by-id": {
+        "/find-similar/by-id": {
             "get": {
                 "description": "문서와 유사한 문서 탐색",
                 "consumes": [

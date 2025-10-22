@@ -46,10 +46,11 @@ func (es *ElasticService) FindSimilarDocsByContent(ctx context.Context, content 
 		"size": 100,
 		"query": map[string]interface{}{
 			"more_like_this": map[string]interface{}{
-				"fields":          []string{"content"},
+				"fields":          []string{"contents"},
 				"like":            []interface{}{content},
 				"min_term_freq":   1,
 				"max_query_terms": 25,
+				"analyzer":        "nori_analyzer",
 			},
 		},
 	}
@@ -66,7 +67,7 @@ func (es *ElasticService) FindSimilarDocsById(ctx context.Context, docId string)
 		"size": 100,
 		"query": map[string]interface{}{
 			"more_like_this": map[string]interface{}{
-				"fields": []string{"content"},
+				"fields": []string{"contents"},
 				"like": []interface{}{
 					map[string]interface{}{
 						"_index": es.indexName,
@@ -116,7 +117,7 @@ func (es *ElasticService) executeSimilaritySearch(ctx context.Context, query map
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	minScore := 70.0 // 70% 이상 유사해야 포함
+	minScore := 0.01
 	ids := make([]string, 0, len(parsed.Hits.Hits))
 	for _, h := range parsed.Hits.Hits {
 		if h.Score >= minScore {

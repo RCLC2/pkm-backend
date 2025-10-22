@@ -17,9 +17,9 @@ func NewServer(es *esclient.ElasticService) *gin.Engine {
 
 	h := handlers.NewHandler(es)
 
-	router.POST("/api/extract-tags", h.ExtractTags)
-	router.POST("/api/find-similar/by-content", h.FindSimilarDocsByContent)
-	router.GET("/api/find-similar/by-id", h.FindSimilarDocsById)
+	router.POST("/extract-tags", h.ExtractTags)
+	router.POST("/find-similar/by-content", h.FindSimilarDocsByContent)
+	router.GET("/find-similar/by-id", h.FindSimilarDocsById)
 
 	return router
 }
