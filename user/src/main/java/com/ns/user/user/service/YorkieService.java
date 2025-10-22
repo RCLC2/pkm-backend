@@ -31,7 +31,7 @@ public class YorkieService {
         if (role == null) {
             throw new ServiceException(PERMISSION_NOT_FOUND);
         }
-
+        
         String verb = roleToVerb(role); // OWNER/WRITER -> "rw", READER -> "r"
 
         String token = yorkieJwtProvider.generateYorkieToken(
@@ -63,7 +63,9 @@ public class YorkieService {
             return YorkieAuthResultVo.of(false, "NOTE_ID_MISMATCH");
         }
         if (!yorkieAuthWebhookVo.verb().equals(yorkieClaims.getVerb())) {
-            return YorkieAuthResultVo.of(false, "VERB_MISMATCH");
+            if (!"rw".equals(yorkieClaims.getVerb()) || !"r".equals(yorkieAuthWebhookVo.verb())) {  
+                return YorkieAuthResultVo.of(false, "VERB_MISMATCH"); // rw는 읽기도 포함해야하니꼐..
+            }  
         }
 
         String method = yorkieAuthWebhookVo.method();

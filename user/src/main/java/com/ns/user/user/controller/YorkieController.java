@@ -21,11 +21,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 
 @RestController
-@RequestMapping("/api/v1/yorkie")
+@RequestMapping("/yorkie")
 @RequiredArgsConstructor
 public class YorkieController {
 
@@ -49,45 +48,43 @@ public class YorkieController {
     }
 
     // yorkie 서버에서 호출하는 권한 검증용 webhook 엔드포인트
-    @PostMapping("/auth")
-    public ResponseEntity<YorkieAuthWebhookResponseDto> authorizeFromYorkie(
-            @RequestHeader(value = "X-Yorkie-Webhook-Secret", required = false) String headerSecret,
-            @RequestBody YorkieAuthWebhookRequestDto yorkieAuthWebhookRequestDto
-    ) {
+    @PostMapping("/auth")  
+    public ResponseEntity<YorkieAuthWebhookResponseDto> authorizeFromYorkie(  
+        @RequestBody YorkieAuthWebhookRequestDto yorkieAuthWebhookRequestDto) {  
+      
+    
+    if ("ActivateClient".equals(yorkieAuthWebhookRequestDto.getMethod())) {  
+        YorkieAuthWebhookResponseDto response = YorkieAuthWebhookResponseDto.allow();  
+        return ResponseEntity.ok(response);  
+    }  
 
-        // 시크릿 검증
-        if (StringUtils.hasText(webhookSecret) && !Objects.equals(webhookSecret, headerSecret)) {
-            return ResponseEntity.ok(YorkieAuthWebhookResponseDto.deny("SECRET_MISMATCH"));
-        }
+    // attributes 검증  
+    DocumentAttributeDto attr = extractSingleAttr(yorkieAuthWebhookRequestDto.getAttributes());  
+    if (attr == null) {  
+        YorkieAuthWebhookResponseDto response = YorkieAuthWebhookResponseDto.deny("INVALID_ATTRIBUTES");  
+        return ResponseEntity.ok(response);  
+    }  
+   
+    String noteId = parseNoteId(attr.getKey());  
+    if (!StringUtils.hasText(noteId) || !StringUtils.hasText(attr.getVerb())) {  
+        YorkieAuthWebhookResponseDto response = YorkieAuthWebhookResponseDto.deny("INVALID_NOTE_OR_VERB");  
+        return ResponseEntity.ok(response);  
+    }  
+   
+    YorkieAuthWebhookVo vo = YorkieAuthWebhookVo.of(  
+            yorkieAuthWebhookRequestDto.getToken(),  
+            yorkieAuthWebhookRequestDto.getMethod(),  
+            noteId,  
+            attr.getVerb()  
+    );      
+    YorkieAuthResultVo resultVo = yorkieService.authorizeForAttachYorkie(vo);  
 
-        // documentAttributes: 단일만 허용 + key/verb 유효성
-        DocumentAttributeDto attr = extractSingleAttr(yorkieAuthWebhookRequestDto.getDocumentAttributes());
-        if (attr == null) {
-            return ResponseEntity.ok(YorkieAuthWebhookResponseDto.deny("INVALID_ATTRIBUTES"));
-        }
-
-        // "note-123" -> "123"
-        String noteId = parseNoteId(attr.getKey());
-        if (!StringUtils.hasText(noteId) || !StringUtils.hasText(attr.getVerb())) {
-            return ResponseEntity.ok(YorkieAuthWebhookResponseDto.deny("INVALID_NOTE_OR_VERB"));
-        }
-
-        YorkieAuthWebhookVo vo = YorkieAuthWebhookVo.of(
-                yorkieAuthWebhookRequestDto.getToken(),
-                yorkieAuthWebhookRequestDto.getMethod(),
-                noteId,
-                attr.getVerb()
-        );
-        // Service 호출(VO 반환)
-        YorkieAuthResultVo resultVo = yorkieService.authorizeForAttachYorkie(vo);
-
-        // 결과 VO -> 응답 DTO(allow/deny 팩토리 사용)
-        return ResponseEntity.ok(
-                resultVo.allowed()
-                        ? YorkieAuthWebhookResponseDto.allow()
-                        : YorkieAuthWebhookResponseDto.deny(resultVo.reason())
-        );
-    }
+    return ResponseEntity.ok(
+        resultVo.allowed() 
+                    ? YorkieAuthWebhookResponseDto.allow() 
+                    : YorkieAuthWebhookResponseDto.deny(resultVo.reason())
+                    );  
+}
 
     // 단일 속성만 허용
     private DocumentAttributeDto extractSingleAttr(List<DocumentAttributeDto> attrs) {
