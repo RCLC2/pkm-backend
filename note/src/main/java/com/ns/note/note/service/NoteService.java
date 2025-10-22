@@ -3,6 +3,7 @@ package com.ns.note.note.service;
 import com.ns.note.exception.ExceptionStatus;
 import com.ns.note.exception.ServiceException;
 import com.ns.note.note.dto.request.OwnerRegisterRequestDto;
+import com.ns.note.note.dto.response.ResponseHandlerDto;
 import com.ns.note.note.entity.NoteEntity;
 import com.ns.note.note.repository.NoteRepository;
 import com.ns.note.note.vo.NoteRequestVo;
@@ -15,18 +16,18 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import static com.ns.note.exception.ExceptionStatus.OWNER_PERMISSION_REGISTER_FAILED;
-import static com.ns.note.exception.ExceptionStatus.USER_SERVICE_ACCESS_FAILED;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
+import static com.ns.note.exception.ExceptionStatus.*;
+
 @Service
 @RequiredArgsConstructor
 public class NoteService {
@@ -61,7 +62,12 @@ public class NoteService {
         return NoteEntitytoNoteResponseVo(newNote);
     }
 
-    public NoteResponseVo updateNote(String id, NoteRequestVo vo) {
+    public NoteResponseVo updateNote(String id, NoteRequestVo vo,  String authorization) {
+        String role = getMyRole(id, authorization);
+        if(!(role.equals("OWNER")||role.equals("WRITER"))){
+            throw new ServiceException(ExceptionStatus.NOTE_SERVICE_NOT_AUTHENTICATION_ROLE);
+        }
+
         NoteEntity note = getActiveNoteById(id);
 
         note.update(vo.workspaceId(), vo.title(), vo.description(), vo.contents());
@@ -71,13 +77,23 @@ public class NoteService {
         return NoteEntitytoNoteResponseVo(updatedNote);
     }
 
-    public NoteResponseVo findNoteDetails(String id) {
+    public NoteResponseVo findNoteDetails(String id, String authorization) {
+        String role = getMyRole(id, authorization);
+        if(!(role.equals("OWNER")||role.equals("WRITER")||role.equals("READER"))){
+            throw new ServiceException(ExceptionStatus.NOTE_SERVICE_NOT_AUTHENTICATION_ROLE);
+        }
+
         NoteEntity note = getActiveNoteById(id);
 
         return NoteEntitytoNoteResponseVo(note);
     }
 
-    public void deleteNote(String id) {
+    public void deleteNote(String id, String authorization) {
+        String role = getMyRole(id, authorization);
+        if(!(role.equals("OWNER"))) {
+            throw new ServiceException(ExceptionStatus.NOTE_SERVICE_NOT_AUTHENTICATION_ROLE);
+        }
+
         NoteEntity note = getActiveNoteById(id);
 
         note.softDelete();
@@ -103,6 +119,7 @@ public class NoteService {
         );
     }
 
+    // USER 서비스에 OWNER 권한 등록 요청
     private void registerOwner(String noteId, String bearer) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", bearer);
@@ -117,6 +134,36 @@ public class NoteService {
                 entity,
                 Void.class
         );
+    }
+
+    // USER 서비스에서 나의 역할 조회
+    private String getMyRole(String noteId, String bearer) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", bearer);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        try{
+            ResponseEntity<ResponseHandlerDto> response = restTemplate.exchange(
+                    userBaseUrl + "/permission/" + noteId + "/me",
+                    HttpMethod.GET,
+                    entity,
+                    ResponseHandlerDto.class
+            );
+
+            ResponseHandlerDto body = response.getBody();
+
+            if(body==null || body.getData()==null || body.getData().getRole()==null){
+                throw new ServiceException(USER_SERVICE_INVALID_ROLE);
+            }
+
+            return body.getData().getRole();
+
+        }catch (HttpStatusCodeException e) { // 4xx / 5xx 모두 처리
+            throw new ServiceException(NOTE_SERVICE_PERMISSION_DENIED);
+        } catch (ResourceAccessException e) { // 연결 문제
+            throw new ServiceException(USER_SERVICE_ACCESS_FAILED);
+        }
+
     }
 
     public List<String> getAllNoteIdsByWorkspace(String workspaceId) {

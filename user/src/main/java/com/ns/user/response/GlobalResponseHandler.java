@@ -51,16 +51,19 @@ public class GlobalResponseHandler<T> {
     public static <T> ResponseEntity<GlobalResponseHandler<T>> successWithCookie(
             ResponseStatus status,
             T data,
-            ResponseCookie cookie
+            ResponseCookie... cookies
     ) {
-        return ResponseEntity.status(status.getStatusCode())
-                .header("Set-Cookie", cookie.toString())
-                .body(GlobalResponseHandler.<T>builder()
-                        .timestamp(OffsetDateTime.now())
-                        .statusCode(status.getStatusCode())
-                        .message(status.getMessage())
-                        .data(data)
-                        .build());
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(status.getStatusCode());
+        for (ResponseCookie cookie : cookies) {
+            builder.header("Set-Cookie", cookie.toString());
+        }
+
+        return builder.body(GlobalResponseHandler.<T>builder()
+                .timestamp(OffsetDateTime.now())
+                .statusCode(status.getStatusCode())
+                .message(status.getMessage())
+                .data(data)
+                .build());
     }
 
     /**
