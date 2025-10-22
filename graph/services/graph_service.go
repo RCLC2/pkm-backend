@@ -26,7 +26,7 @@ const (
 )
 
 var topicUrl = os.Getenv("TOPIC_SERVICE_URL")
-var documentUrl = os.Getenv("DOCUMENT_SERVICE_URL")
+var noteUrl = os.Getenv("NOTE_SERVICE_URL")
 
 type GraphService struct {
 	db                    *mongo.Database
@@ -45,9 +45,17 @@ func NewGraphService(db *mongo.Database) *GraphService {
 }
 
 func fetchDocumentIDsHTTP(ctx context.Context, workspaceID string) ([]string, error) {
-	apiURL := fmt.Sprintf("%s/workspaces/%s/document-ids", documentUrl, workspaceID)
+	apiURL := fmt.Sprintf("%s/note/ids", noteUrl)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	reqURL, err := url.Parse(apiURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid api url: %w", err)
+	}
+	q := reqURL.Query()
+	q.Set("workspaceId", workspaceID)
+	reqURL.RawQuery = q.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create document IDs request: %w", err)
 	}
@@ -87,7 +95,8 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 		return nil, fmt.Errorf("failed to marshal content request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/find-similar", bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/find-similar/by-content", bytes.NewReader(reqBody))
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create content request: %w", err)
 	}
@@ -97,7 +106,7 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 }
 
 func fetchSimilarDocsByIDHTTP(ctx context.Context, docID string, topN int) ([]string, error) {
-	u, err := url.Parse(topicUrl + "/find-similar")
+	u, err := url.Parse(topicUrl + "/find-similar/by-id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse topic service URL: %w", err)
 	}

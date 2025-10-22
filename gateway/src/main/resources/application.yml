@@ -13,6 +13,17 @@ management:
       probes:
         enabled: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
 spring:
   cloud:
     gateway:

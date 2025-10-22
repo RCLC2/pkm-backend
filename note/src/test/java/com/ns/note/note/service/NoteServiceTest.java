@@ -38,6 +38,7 @@ class NoteServiceTest {
         // given
         NoteRequestVo vo = new NoteRequestVo("1", "title", "desc", "contents");
         NoteEntity saved = NoteEntity.builder()
+        .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")
@@ -53,6 +54,7 @@ class NoteServiceTest {
         NoteResponseVo result = noteService.createNewNote(vo,"Bearer test-token");
 
         // then
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("title");
         assertThat(result.contents()).isEqualTo("contents");
         assertThat(result.description()).isEqualTo("desc");
@@ -66,6 +68,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("old")
                 .description("old")
                 .contents("old")
@@ -79,6 +82,7 @@ class NoteServiceTest {
 
         // then
         assertThat(result.id()).isEqualTo(id);
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("new");
         assertThat(result.description()).isEqualTo("new");
         assertThat(result.contents()).isEqualTo("new");
@@ -102,6 +106,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")
@@ -114,6 +119,7 @@ class NoteServiceTest {
 
         // then
         assertThat(result.id()).isEqualTo(id);
+        assertThat(result.workspaceId()).isEqualTo("1");
         assertThat(result.title()).isEqualTo("title");
         assertThat(result.description()).isEqualTo("desc");
         assertThat(result.contents()).isEqualTo("contents");
@@ -136,6 +142,7 @@ class NoteServiceTest {
         String id = "123";
         NoteEntity existing = NoteEntity.builder()
                 .id(id)
+                .workspaceId("1")
                 .title("title")
                 .description("desc")
                 .contents("contents")

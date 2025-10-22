@@ -1,6 +1,7 @@
 package com.ns.user.user.controller;
 
 import com.ns.user.jwt.CurrentUser;
+import com.ns.user.jwt.YorkieJwtProvider;
 import com.ns.user.response.GlobalResponseHandler;
 import com.ns.user.response.ResponseStatus;
 import com.ns.user.user.dto.DocumentAttributeDto;
@@ -12,8 +13,12 @@ import com.ns.user.user.service.YorkieService;
 import com.ns.user.user.vo.YorkieAuthResultVo;
 import com.ns.user.user.vo.YorkieAuthWebhookVo;
 import com.ns.user.user.vo.YorkieTokenIssueVo;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.CollectionUtils;
@@ -22,14 +27,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/yorkie")
 @RequiredArgsConstructor
 public class YorkieController {
 
     private final YorkieService yorkieService;
-
+    private final YorkieJwtProvider yorkieJwtProvider;
 
     @Value("${yorkie.webhook.secret:${YORKIE_WEBHOOK_SECRET:}}")
     private String webhookSecret;
@@ -99,5 +104,17 @@ public class YorkieController {
         if (!StringUtils.hasText(key)) return null;
         String prefix = "note-";
         return key.startsWith(prefix) ? key.substring(prefix.length()) : null;
+    }
+
+    // 401 토큰 관련 로직
+    private ResponseEntity<YorkieAuthWebhookResponseDto> unauth(String reason) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(YorkieAuthWebhookResponseDto.deny(reason));
+    }
+
+    // 403 권한 관련 로직
+    private ResponseEntity<YorkieAuthWebhookResponseDto> forbid(String reason) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(YorkieAuthWebhookResponseDto.deny(reason));
     }
 }

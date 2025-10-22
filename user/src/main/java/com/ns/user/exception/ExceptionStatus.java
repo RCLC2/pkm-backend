@@ -26,6 +26,8 @@ public enum ExceptionStatus {
     AUTH_JWT_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 JWT입니다."),
     AUTH_JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 JWT입니다."),
 
+    AUTH_YORKIE_JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 YORKIE_JWT입니다."),
+    AUTH_YORKIE_JWT_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 YORKIE_JWT입니다."),
 
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),

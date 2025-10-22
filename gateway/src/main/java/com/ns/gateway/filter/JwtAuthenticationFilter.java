@@ -134,9 +134,12 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             throw new IllegalArgumentException(MISSING_USER_ID);
         }
 
+        String originalAuthHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
         return request.mutate()
                 .header("X-User-ID", userId)
                 .header("X-User-Roles", String.join(",", roles))
+                .header("Authorization", originalAuthHeader)
                 .build();
     }
 
