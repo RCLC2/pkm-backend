@@ -1,18 +1,28 @@
 server:
-  port: 8000
+  # 포트 번호를 환경 변수로 지정, 기본값은 8000
+  port: ${GATEWAY_SERVER_PORT:8000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
 
 spring:
-  application:
-    name: api-gateway
   cloud:
     gateway:
       routes:
         - id: note_route
-          uri: lb://note-svc
+          uri: ${NOTE_SERVICE_URI:http://note-svc.rclc.svc.cluster.local:80}
           predicates:
-            - Path=/api/notes/**
+            - Path=/api/v1/notes/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -23,28 +33,12 @@ spring:
                 name: noteServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
-        - id: topic_route
-          uri: lb://topic-svc
-          predicates:
-            - Path=/api/topics/**
-          filters:
-            - StripPrefix=2
-            - Logging
-            - JwtAuthentication
-            - name: TimeLimiter
-              args:
-                name: topicServiceTimeLimiter
-            - name: CircuitBreaker
-              args:
-                name: topicServiceCircuitBreaker
-                fallbackUri: forward:/fallback
-
         - id: graph_route
-          uri: lb://graph-svc
+          uri: ${GRAPH_SERVICE_URI:http://graph-svc.rclc.svc.cluster.local:80}
           predicates:
-            - Path=/api/graphs/**
+            - Path=/api/v1/graphs/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -56,11 +50,11 @@ spring:
                 fallbackUri: forward:/fallback
 
         - id: user_route
-          uri: lb://user-svc
+          uri: ${USER_SERVICE_URI:http://user-svc.rclc.svc.cluster.local:80}
           predicates:
-            - Path=/api/users/**
+            - Path=/api/v1/users/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=3
             - Logging
             - JwtAuthentication
             - name: TimeLimiter
@@ -74,33 +68,25 @@ spring:
 circuitbreaker:
   configs:
     default:
-      failureRateThreshold: 50
+      failureRateThreshold: ${CB_DEFAULT_FAILURE_RATE:50}
       slidingWindowType: COUNT_BASED
-      slidingWindowSize: 10
-      minimumNumberOfCalls: 5
+      slidingWindowSize: ${CB_DEFAULT_WINDOW_SIZE:10}
+      minimumNumberOfCalls: ${CB_DEFAULT_MIN_CALLS:5}
       permittedNumberOfCallsInHalfOpenState: 3
-      waitDurationInOpenState: 5s
+      waitDurationInOpenState: ${CB_DEFAULT_WAIT_DURATION:5s}
       recordExceptions:
         - java.io.IOException
         - java.util.concurrent.TimeoutException
 
     noteServiceCircuitBreaker:
-      failureRateThreshold: 60
-      slidingWindowSize: 20
-      waitDurationInOpenState: 10s
-
-    topicServiceCircuitBreaker:
-      failureRateThreshold: 70
-      slidingWindowSize: 15
-      waitDurationInOpenState: 7s
+      failureRateThreshold: ${CB_NOTE_FAILURE_RATE:60}
+      slidingWindowSize: ${CB_NOTE_WINDOW_SIZE:20}
+      waitDurationInOpenState: ${CB_NOTE_WAIT_DURATION:10s}
 
 timelimiter:
   configs:
     default:
-      timeoutDuration: 2s
+      timeoutDuration: ${TL_DEFAULT_TIMEOUT:2s}
 
     noteServiceTimeLimiter:
-      timeoutDuration: 3s
-
-    topicServiceTimeLimiter:
-      timeoutDuration: 3s
+      timeoutDuration: ${TL_NOTE_TIMEOUT:3s}
