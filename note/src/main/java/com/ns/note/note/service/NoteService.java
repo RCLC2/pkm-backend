@@ -25,9 +25,9 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 import static com.ns.note.exception.ExceptionStatus.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoteService {
