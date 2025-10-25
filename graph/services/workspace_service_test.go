@@ -96,15 +96,27 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	})
 
 	mt.Run("Error_InsertJobFails", func(mt *mtest.T) {
-		mt.AddMockResponses(
-			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
-			mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "insert job failed"}),
-		)
+		wsID, _ := primitive.ObjectIDFromHex(workspaceID)
+
+		findResponse := mtest.CreateCursorResponse(1, "testdb.workspaces", mtest.FirstBatch, bson.D{
+			{Key: "_id", Value: wsID},
+			{Key: "title", Value: "Original Title"},
+			{Key: "type", Value: models.WorkspaceTypeGeneric},
+			{Key: "user_id", Value: userID},
+			{Key: "yorkie_project_id", Value: "proj-abc"},
+			{Key: "created_at", Value: time.Now()},
+			{Key: "updated_at", Value: time.Now()},
+		})
+
+		updateResponse := bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}}
+		insertJobFailResponse := mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "insert job failed"})
+		mt.AddMockResponses(findResponse, updateResponse, insertJobFailResponse)
 
 		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil, "")
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
+
 		assert.Error(mt, err)
-		assert.Contains(mt, err.Error(), "failed to create queueing history")
+		assert.Contains(mt, err.Error(), "insert job failed")
 	})
 }
 
