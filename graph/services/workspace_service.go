@@ -219,8 +219,10 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 	var currentTitle *string
 	_, err := s.UpdateWorkspace(ctx, workspaceID, userID, currentTitle, &newStyle)
 	if err != nil {
+		log.Printf("[ChangeStyle] Error: Failed to update workspace type in DB: %v", err)
 		return "", fmt.Errorf("failed to update workspace type: %w", err)
 	}
+	log.Printf("[ChangeStyle] Success: Workspace DB type updated to '%s'", newStyle)
 
 	jobID := primitive.NewObjectID()
 	job := models.WorkspaceJob{
@@ -232,20 +234,35 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 		UpdatedAt:   time.Now(),
 	}
 
+	log.Printf("[ChangeStyle] Queueing Job ID: %s, Status: pending", jobID.Hex())
+
 	_, err = s.db.Collection("workspace_jobs").InsertOne(ctx, job)
 	if err != nil {
 		return "", fmt.Errorf("failed to create queueing history: %w", err)
 	}
 
+	log.Printf("[ChangeStyle] Starting async graph processing for Job ID: %s, Style: %s", jobID.Hex(), newStyle)
 	go func(jobID primitive.ObjectID, workspaceID, style string) {
 		ctxBG := context.Background()
 
 		var err error
 		switch style {
 		case models.WorkspaceTypeZettel:
+			log.Printf("[Job %s] Starting AutoConnectWorkspace for Zettel style.", jobID.Hex())
 			_, err = s.graphService.AutoConnectWorkspace(ctxBG, workspaceID)
+			if err != nil {
+				log.Printf("[Job %s] Error: AutoConnectWorkspace failed: %v", jobID.Hex(), err)
+			} else {
+				log.Printf("[Job %s] Success: AutoConnectWorkspace completed.", jobID.Hex())
+			}
 		case models.WorkspaceTypeGeneric, models.WorkspaceTypePara:
+			log.Printf("[Job %s] Starting ClearPendingConnections for %s style.", jobID.Hex(), style)
 			_, err = s.graphService.ClearPendingConnections(ctxBG, workspaceID)
+			if err != nil {
+				log.Printf("[Job %s] Error: ClearPendingConnections failed: %v", jobID.Hex(), err)
+			} else {
+				log.Printf("[Job %s] Success: ClearPendingConnections completed.", jobID.Hex())
+			}
 		}
 
 		status := "success"
@@ -253,7 +270,7 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 			status = "failed"
 		}
 
-		_, _ = s.db.Collection("workspace_jobs").UpdateOne(
+		_, updateErr := s.db.Collection("workspace_jobs").UpdateOne(
 			ctxBG,
 			bson.M{"_id": jobID},
 			bson.M{"$set": bson.M{
@@ -261,6 +278,12 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 				"updated_at": time.Now(),
 			}},
 		)
+
+		if updateErr != nil {
+			log.Printf("[Job %s] Fatal Error: Failed to update job status to '%s' in DB: %v", jobID.Hex(), status, updateErr)
+		} else {
+			log.Printf("[Job %s] Success: Job status updated to '%s'.", jobID.Hex(), status)
+		}
 	}(jobID, workspaceID, newStyle)
 
 	return fmt.Sprintf("changed to workspace type: '%s'. (async works: %s)", newStyle, jobID.Hex()), nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 
 	"fmt"
 	"graph/models"
@@ -22,7 +23,6 @@ import (
 const (
 	StatusPending   = "pending"
 	StatusConfirmed = "confirmed"
-	StatusEdited    = "edited"
 )
 
 var topicUrl = os.Getenv("TOPIC_SERVICE_URL")
@@ -246,23 +246,6 @@ func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, tar
 	return err
 }
 
-func (s *GraphService) prepareEditedUpdate(sourceObjID, targetObjID primitive.ObjectID, workspaceID string) bson.M {
-	editedConn := makeConnection(sourceObjID, targetObjID, workspaceID, StatusEdited)
-
-	return bson.M{
-		"$set": bson.M{
-			"source_id":    editedConn.SourceID,
-			"target_id":    editedConn.TargetID,
-			"status":       editedConn.Status,
-			"workspace_id": editedConn.WorkspaceID,
-			"updated_at":   editedConn.UpdatedAt,
-		},
-		"$setOnInsert": bson.M{
-			"created_at": editedConn.CreatedAt,
-		},
-	}
-}
-
 func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
 	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
 	if err != nil {
@@ -273,9 +256,10 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 		return fmt.Errorf("invalid target ID: %w", err)
 	}
 
+	newConn := makeConnection(sourceObjID, targetObjID, workspaceID, StatusPending)
 	opts := options.Update().SetUpsert(true)
-	update := s.prepareEditedUpdate(sourceObjID, targetObjID, workspaceID)
 	filter := bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID}
+	update := bson.M{"$set": newConn}
 
 	_, err = s.db.Collection("graph_connections").UpdateOne(
 		ctx,
@@ -289,32 +273,39 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 func (s *GraphService) ConfirmAllConnections(ctx context.Context, workspaceID string) error {
 	_, err := s.db.Collection("graph_connections").UpdateMany(
 		ctx,
-		bson.M{"workspace_id": workspaceID, "status": bson.M{"$in": []string{StatusPending, StatusEdited}}},
+		bson.M{"workspace_id": workspaceID, "status": StatusPending},
 		bson.M{"$set": bson.M{"status": StatusConfirmed, "updated_at": time.Now()}},
 	)
 	return err
 }
 
 func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID string) ([]models.GraphConnection, error) {
+	log.Printf("[AutoConnect] Started for Workspace ID: %s", workspaceID)
+
 	docIDs, err := s.FetchDocumentIDs(ctx, workspaceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch workspace doc IDs: %w", err)
 	}
+	log.Printf("[AutoConnect] Fetched %d document IDs.", len(docIDs))
 
 	var connections []models.GraphConnection
 	connColl := s.db.Collection("graph_connections")
 
-	for _, docID := range docIDs {
+	for i, docID := range docIDs {
+		log.Printf("[AutoConnect %s/%d] Processing document ID: %s", workspaceID, i+1, docID)
 		sourceID, err := objectIDFromHex(docID, "source document")
 		if err != nil {
+			log.Printf("[AutoConnect %s] Warning: Invalid document ID %s, skipping.", workspaceID, docID)
 			continue
 		}
 
 		similarIDs, err := s.FetchSimilarByID(ctx, docID, 5)
 		if err != nil {
+			log.Printf("[AutoConnect %s] Warning: Failed to fetch similar docs for %s: %v, skipping.", workspaceID, docID, err)
 			continue
 		}
 
+		log.Printf("[AutoConnect %s] Found %d similar IDs for %s.", workspaceID, len(similarIDs), docID)
 		for _, targetIDStr := range similarIDs {
 			if docID == targetIDStr {
 				continue
@@ -322,6 +313,7 @@ func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID str
 
 			targetID, err := objectIDFromHex(targetIDStr, "target document")
 			if err != nil {
+				log.Printf("[AutoConnect %s] Warning: Invalid target ID %s, skipping connection.", workspaceID, targetIDStr)
 				continue
 			}
 
@@ -346,17 +338,22 @@ func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID str
 			*/
 		}
 	}
+
+	log.Printf("[AutoConnect] Finished. Total %d connections processed for WS ID: %s", len(connections), workspaceID)
 	return connections, nil
 }
 
 func (s *GraphService) ClearPendingConnections(ctx context.Context, workspaceID string) (int64, error) {
+	// pending 상태인 모든 연결을 삭제한다.
 	result, err := s.db.Collection("graph_connections").DeleteMany(
 		ctx,
-		bson.M{"workspace_id": workspaceID, "status": bson.M{"$in": []string{StatusPending, StatusEdited}}},
+		bson.M{"workspace_id": workspaceID, "status": StatusPending},
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to clear pending connections: %w", err)
 	}
+
+	log.Printf("[ClearConnections] Success: Deleted %d pending/edited connections for WS ID: %s", result.DeletedCount, workspaceID)
 	return result.DeletedCount, nil
 }
 

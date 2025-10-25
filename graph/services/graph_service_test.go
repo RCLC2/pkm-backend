@@ -241,7 +241,7 @@ func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 				{Key: "_id", Value: primitive.NewObjectID()},
 				{Key: "source_id", Value: docID2},
 				{Key: "target_id", Value: docID1},
-				{Key: "status", Value: services.StatusEdited},
+				{Key: "status", Value: services.StatusPending},
 				{Key: "workspace_id", Value: workspaceID},
 				{Key: "created_at", Value: nowDT},
 				{Key: "updated_at", Value: nowDT},
@@ -262,6 +262,6 @@ func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Edges, 2)
 		assert.Equal(t, services.StatusConfirmed, response.Edges[0].Status)
-		assert.Equal(t, services.StatusEdited, response.Edges[1].Status)
+		assert.Equal(t, services.StatusPending, response.Edges[1].Status)
 	})
 }
