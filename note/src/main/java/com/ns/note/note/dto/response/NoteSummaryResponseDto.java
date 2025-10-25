@@ -4,39 +4,30 @@ import com.ns.note.note.vo.NoteResponseVo;
 import lombok.Getter;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 @Getter
-public class NoteResponseDto {
+public class NoteSummaryResponseDto {
 
     private final String id;
-    private final String workspaceId;
     private final String title;
     private final String description;
-    private final String contents;
     private final Instant createdAt;
     private final Instant updatedAt;
 
-    private NoteResponseDto(String id, String workspaceId, String title, String description, String contents,
-                            Instant createdAt, Instant updatedAt) {
+    private NoteSummaryResponseDto(String id, String title, String description, Instant createdAt, Instant updatedAt) {
         this.id = id;
-        this.workspaceId = workspaceId;
         this.title = title;
         this.description = description;
-        this.contents = contents;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
     // VO → ResponseDto 변환
-    public static NoteResponseDto from(NoteResponseVo vo) {
-        return new NoteResponseDto(
+    public static NoteSummaryResponseDto from(NoteResponseVo vo) {
+        return new NoteSummaryResponseDto(
                 vo.id(),
-                vo.workspaceId(),
                 vo.title(),
                 vo.description(),
-                vo.contents(),
                 vo.createdAt(),
                 vo.updatedAt()
         );

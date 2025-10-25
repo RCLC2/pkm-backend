@@ -1,5 +1,6 @@
 package com.ns.user.user.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ns.user.user.dto.DocumentAttributeDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class YorkieAuthWebhookRequestDto {
+    @JsonProperty("token")
     private String token;   // yorkie_jwt
+    @JsonProperty("method") 
     private String method;  // "PushPull"
-    private List<DocumentAttributeDto> documentAttributes;
+    @JsonProperty("attributes")
+    private List<DocumentAttributeDto> attributes;
 }

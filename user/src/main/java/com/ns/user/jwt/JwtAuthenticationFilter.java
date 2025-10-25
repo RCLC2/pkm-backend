@@ -67,9 +67,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldSkipFilter(HttpServletRequest request){
         final List<String> excludedPaths = Arrays.asList(
                 // 인증 관련
-                "/api/v1/member/**",
-                "/api/v1/auth/google/**",
-                "/api/v1/auth/signup",
+                "/member/**",
+                "/auth/google/**",
+                "/auth/signup",
                 //문서 모니터링
                 "/swagger-ui.html",
                 "/swagger-ui",

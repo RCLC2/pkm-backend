@@ -26,7 +26,7 @@ func NewHandler(es *esclient.ElasticService) *Handler {
 // @Accept json
 // @Produce json
 // @Param request body SearchRequest true "콘텐츠와 상위 N개 태그 개수(default=10)"
-// @Router /api/extract-tags [post]
+// @Router /extract-tags [post]
 func (h *Handler) ExtractTags(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -52,7 +52,7 @@ func (h *Handler) ExtractTags(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body SearchRequest true "콘텐츠"
-// @Router /api/find-similar [post]
+// @Router /find-similar/by-content [post]
 func (h *Handler) FindSimilarDocsByContent(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -78,7 +78,7 @@ func (h *Handler) FindSimilarDocsByContent(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param noteId query string true "문서 ID"
-// @Router /api/find-similar/by-id [get]
+// @Router /find-similar/by-id [get]
 func (h *Handler) FindSimilarDocsById(c *gin.Context) {
 	docsId := c.Query("noteId")
 	if docsId == "" {

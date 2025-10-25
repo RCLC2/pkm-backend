@@ -22,19 +22,23 @@ func NewGraphConnectionHandler(gs *services.GraphService) *GraphConnectionHandle
 // @Tags Graph Connection
 // @Accept json
 // @Produce json
-// @Param request body object{sourceId=string, targetId=string} true "연결을 확정할 Source 문서 ID 및 Target 문서 ID"
-// @Router /api/connections/confirm [post]
+// @Param request body object{sourceId=string,targetId=string,workspaceId=string} true "연결을 확정할 Source 문서 ID 및 Target 문서 ID"
+// @Success 200 {object} object{status=string} "연결 확정 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식 (예: 필수 필드 누락)"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 확정 실패"
+// @Router /connections/confirm [post]
 func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 	var req struct {
-		SourceID string `json:"sourceId" binding:"required"`
-		TargetID string `json:"targetId" binding:"required"`
+		SourceID    string `json:"sourceId" binding:"required"`
+		TargetID    string `json:"targetId" binding:"required"`
+		WorkspaceID string `json:"workspaceId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.service.ConfirmGraphConnection(c.Request.Context(), req.SourceID, req.TargetID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to confirm connection"})
+	if err := h.service.ConfirmGraphConnection(c.Request.Context(), req.SourceID, req.TargetID, req.WorkspaceID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to confirm connection: %s", err.Error())})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
@@ -46,19 +50,23 @@ func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 // @Tags Graph Connection
 // @Accept json
 // @Produce json
-// @Param request body object{sourceId=string, targetId=string} true "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID"
-// @Router /api/connections/edit [post]
+// @Param request body object{sourceId=string,targetId=string,workspaceId=string} true "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID"
+// @Success 200 {object} object{status=string} "연결 편집 상태 설정 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 편집 상태 설정 실패"
+// @Router /connections/edit [post]
 func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 	var req struct {
-		SourceID string `json:"sourceId" binding:"required"`
-		TargetID string `json:"targetId" binding:"required"`
+		SourceID    string `json:"sourceId" binding:"required"`
+		TargetID    string `json:"targetId" binding:"required"`
+		WorkspaceID string `json:"workspaceId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.service.EditGraphConnection(c.Request.Context(), req.SourceID, req.TargetID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to edit connection"})
+	if err := h.service.EditGraphConnection(c.Request.Context(), req.SourceID, req.TargetID, req.WorkspaceID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to edit connection: %s", err.Error())})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
@@ -70,18 +78,22 @@ func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 // @Tags Graph Connection
 // @Accept json
 // @Produce json
-// @Param request body object{noteId=string} true "삭제된 노트 ID"
-// @Router /api/connections/note-deleted [post]
+// @Param request body object{noteId=string,workspaceId=string} true "삭제된 노트 ID"
+// @Success 200 {object} object{status=string} "노트 관련 그래프 연결 삭제 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 그래프 연결 삭제 실패"
+// @Router /connections/note-deleted [post]
 func (h *GraphConnectionHandler) DeleteNoteGraph(c *gin.Context) {
 	var req struct {
-		NoteID string `json:"noteId" binding:"required"`
+		NoteID      string `json:"noteId" binding:"required"`
+		WorkspaceID string `json:"workspaceId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.service.NoteDeleted(c.Request.Context(), req.NoteID); err != nil {
+	if err := h.service.NoteDeleted(c.Request.Context(), req.NoteID, req.WorkspaceID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to delete graph connections: %v", err)})
 		return
 	}

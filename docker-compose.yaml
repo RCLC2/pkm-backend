@@ -66,6 +66,12 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     environment:
+      - GATEWAY_SERVER_PORT=8000
+      - USER_SERVICE_URI=htt://user-service:8080
+      - GRAPH_SERVICE_URI=htt://graph-service:8003
+      - NOTE_SERVICE_URI=htt://note-service:8002
+      - CB_DEFAULT_FAILURE_RATE=50
+      - TL_DEFAULT_TIMEOUT=2s
       - JWT_SECRET=fijofjweofjowejfoawijfwejfpijwepifjwpeijfpp
     ports:
       - "8000:8000"
@@ -89,9 +95,9 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - JWT_SECRET=${JWT_SECRET}
-      - YORKIE_JWT_SECRET=${YORKIE_JWT_SECRET}
-      - YORKIE_WEBHOOK_SECRET=${YORKIE_WEBHOOK_SECRET}
+      - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
+      - YORKIE_JWT_SECRET=fwoifjowiejfoiawjefowejfoiwejfowiej
+      - YORKIE_WEBHOOK_SECRET=fewoifjaowiejfoiawjefoiwejfoaiwejo
     ports: ["8080:8080"]
     depends_on:
       mongodb:
@@ -119,6 +125,7 @@ services:
       - YORKIE_ADDR=yorkie:8085
       - YORKIE_ADMIN_USERNAME=admin
       - YORKIE_ADMIN_PASSWORD=admin
+      - YORKIE_AUTH_WEBHOOK_URL=http://user-service:8080/yorkie/auth
       - TOPIC_SERVICE_URL=http://topic-service:8004
       - NOTE_SERVICE_URL=http://note-service:8002
     ports: ["8003:8003"]
@@ -138,7 +145,7 @@ services:
     environment:
       - SERVER_PORT=8004
       - ELASTICSEARCH_ADDR=http://elasticsearch:9200
-      - ELASTICSEARCH_INDEX=topics
+      - ELASTICSEARCH_INDEX=note
     ports: ["8004:8004"]
     depends_on:
       elasticsearch:
@@ -160,7 +167,7 @@ services:
     environment:
       - SERVER_PORT=8002
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
-      - ELASTICSEARCH_INDEX=notes
+      - ELASTICSEARCH_INDEX=note
       - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
       - --admin-username=rclc
       - --admin-password=rclc

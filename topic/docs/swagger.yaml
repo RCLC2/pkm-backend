@@ -11,7 +11,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/extract-tags:
+  /extract-tags:
     post:
       consumes:
       - application/json
@@ -27,7 +27,7 @@ paths:
       - application/json
       responses: {}
       summary: 태그 추출
-  /api/find-similar:
+  /find-similar/by-content:
     post:
       consumes:
       - application/json
@@ -43,7 +43,7 @@ paths:
       - application/json
       responses: {}
       summary: 유사한 문서 탐색
-  /api/find-similar/by-id:
+  /find-similar/by-id:
     get:
       consumes:
       - application/json

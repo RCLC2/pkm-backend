@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"graph/models"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,18 +18,34 @@ import (
 )
 
 type WorkspaceService struct {
-	db           *mongo.Database
-	graphService *GraphService
-	yorkieAdmin  *admin.Client
+	db             *mongo.Database
+	graphService   *GraphService
+	yorkieAdmin    *admin.Client
+	authWebhookURL string
 }
 
-func NewWorkspaceService(db *mongo.Database, gs *GraphService, yorkieAdmin *admin.Client) *WorkspaceService {
-	return &WorkspaceService{db: db, graphService: gs, yorkieAdmin: yorkieAdmin}
+var nonSlugChar = regexp.MustCompile(`[^a-z0-9-]+`)
+
+func toSlug(s string) string {
+	s = strings.ToLower(s)
+	s = nonSlugChar.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	s = strings.ReplaceAll(s, "--", "-")
+	return s
 }
 
-func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, creatorID string) (string, error) {
-	if title == "" || wsType == "" || creatorID == "" {
-		return "", errors.New("title, type, creatorID is nil")
+func NewWorkspaceService(db *mongo.Database, gs *GraphService, yorkieAdmin *admin.Client, authWebhookURL string) *WorkspaceService {
+	return &WorkspaceService{
+		db:             db,
+		graphService:   gs,
+		yorkieAdmin:    yorkieAdmin,
+		authWebhookURL: authWebhookURL,
+	}
+}
+
+func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, userID string) (string, error) {
+	if title == "" || wsType == "" || userID == "" {
+		return "", errors.New("title, type, userID is nil")
 	}
 
 	wsType = strings.ToLower(strings.TrimSpace(wsType))
@@ -36,21 +53,31 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, c
 		return "", fmt.Errorf("invalid workspace type: %s", wsType)
 	}
 
-	projectName := fmt.Sprintf("workspace-%s-%s", creatorID, title)
+	if s.yorkieAdmin == nil {
+		return "", errors.New("yorkieAdmin client is not initialized")
+	}
+
+	slugTitle := toSlug(title)
+
+	if slugTitle == "" {
+		return "", errors.New("workspace title is too generic or empty after slug transformation")
+	}
+
+	projectName := fmt.Sprintf("workspace-%s-%s", userID, slugTitle)
 	project, err := s.yorkieAdmin.CreateProject(ctx, projectName)
 	if err != nil {
 		return "", fmt.Errorf("failed to create yorkie project: %w", err)
 	}
 
-	doc := bson.M{
-		"title":             title,
-		"type":              wsType,
-		"creator_id":        creatorID,
-		"yorkie_project_id": project.ID.String(),
-		"yorkie_public_key": project.PublicKey,
-		"yorkie_secret_key": project.SecretKey,
-		"created_at":        time.Now(),
-		"updated_at":        time.Now(),
+	doc := models.Workspace{
+		Title:           title,
+		Type:            wsType,
+		UserID:          userID,
+		YorkieProjectID: project.ID.String(),
+		YorkiePublicKey: project.PublicKey,
+		YorkieSecretKey: project.SecretKey,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
 	res, err := s.db.Collection("workspaces").InsertOne(ctx, doc)
@@ -58,8 +85,9 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, c
 		return "", fmt.Errorf("filaed to create workspace: %w", err)
 	}
 
-	authWebhookURL := "http://user-service:8080/api/v1/yorkie/auth"
+	authWebhookURL := s.authWebhookURL
 	authWebhookMethods := []string{"AttachDocument", "PushPull", "WatchDocuments"}
+
 	_, err = s.yorkieAdmin.UpdateProject(ctx, project.ID.String(), &types.UpdatableProjectFields{
 		AuthWebhookURL:     &authWebhookURL,
 		AuthWebhookMethods: &authWebhookMethods,
@@ -77,11 +105,8 @@ func (s *WorkspaceService) CheckWorkspace(ctx context.Context, workspaceID, user
 		return "", false, fmt.Errorf("invalid workspaceID: %w", err)
 	}
 
-	var ws struct {
-		Type      string `bson:"type"`
-		CreatorID string `bson:"creator_id"`
-	}
-	err = s.db.Collection("workspaces").FindOne(ctx, bson.M{"_id": objID, "creator_id": userID}).Decode(&ws)
+	var ws models.Workspace
+	err = s.db.Collection("workspaces").FindOne(ctx, bson.M{"_id": objID, "user_id": userID}).Decode(&ws)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", false, nil
@@ -97,10 +122,35 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 		return "", fmt.Errorf("invalid workspaceID: %w", err)
 	}
 
-	setMap := bson.M{"updated_at": time.Now()}
-	if title != nil {
-		setMap["title"] = *title
+	var currentWs models.Workspace
+	err = s.db.Collection("workspaces").FindOne(ctx, bson.M{"_id": objID, "user_id": userID}).Decode(&currentWs)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", errors.New("workspace not found or unauthorized")
+		}
+		return "", fmt.Errorf("failed to fetch workspace: %w", err)
 	}
+
+	setMap := bson.M{"updated_at": time.Now()}
+
+	if title != nil && currentWs.Title != *title {
+		setMap["title"] = *title
+
+		if s.yorkieAdmin != nil {
+			slugTitle := toSlug(*title)
+			newProjectName := fmt.Sprintf("workspace-%s-%s", currentWs.UserID, slugTitle)
+
+			_, err = s.yorkieAdmin.UpdateProject(ctx, currentWs.YorkieProjectID, &types.UpdatableProjectFields{
+				Name: &newProjectName,
+			})
+			if err != nil {
+				log.Printf("failed to update yorkie project name for %s: %v", currentWs.YorkieProjectID, err)
+			}
+		} else {
+			log.Println("yorkieAdmin client is nil, cannot update project name")
+		}
+	}
+
 	if wsType != nil {
 		t := strings.ToLower(strings.TrimSpace(*wsType))
 		if !isValidWorkspaceType(t) {
@@ -110,15 +160,17 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 	}
 
 	res, err := s.db.Collection("workspaces").UpdateOne(ctx,
-		bson.M{"_id": objID, "creator_id": userID},
+		bson.M{"_id": objID, "user_id": userID},
 		bson.M{"$set": setMap},
 	)
 	if err != nil {
 		return "", err
 	}
+
 	if res.MatchedCount == 0 {
 		return "", errors.New("workspace not found or unauthorized")
 	}
+
 	msg := "workspace updated successfully"
 	if res.ModifiedCount == 0 {
 		msg = "no changes applied"
@@ -136,7 +188,7 @@ func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, use
 	if _, err := s.db.Collection("connections").DeleteMany(ctx, bson.M{"workspace_id": workspaceID}); err != nil {
 		return err
 	}
-	res, err := s.db.Collection("workspaces").DeleteOne(ctx, bson.M{"_id": objID, "creator_id": userID})
+	res, err := s.db.Collection("workspaces").DeleteOne(ctx, bson.M{"_id": objID, "user_id": userID})
 	// todo. 노트도 삭제해야해요 ㅜㅜ
 	if err != nil {
 		return err
@@ -167,32 +219,50 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 	var currentTitle *string
 	_, err := s.UpdateWorkspace(ctx, workspaceID, userID, currentTitle, &newStyle)
 	if err != nil {
+		log.Printf("[ChangeStyle] Error: Failed to update workspace type in DB: %v", err)
 		return "", fmt.Errorf("failed to update workspace type: %w", err)
 	}
+	log.Printf("[ChangeStyle] Success: Workspace DB type updated to '%s'", newStyle)
 
 	jobID := primitive.NewObjectID()
-	job := bson.M{
-		"_id":          jobID,
-		"workspace_id": workspaceID,
-		"type":         newStyle,
-		"status":       "pending",
-		"created_at":   time.Now(),
-		"updated_at":   time.Now(),
+	job := models.WorkspaceJob{
+		ID:          jobID,
+		WorkspaceID: workspaceID,
+		Type:        newStyle,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
+
+	log.Printf("[ChangeStyle] Queueing Job ID: %s, Status: pending", jobID.Hex())
+
 	_, err = s.db.Collection("workspace_jobs").InsertOne(ctx, job)
 	if err != nil {
 		return "", fmt.Errorf("failed to create queueing history: %w", err)
 	}
 
+	log.Printf("[ChangeStyle] Starting async graph processing for Job ID: %s, Style: %s", jobID.Hex(), newStyle)
 	go func(jobID primitive.ObjectID, workspaceID, style string) {
 		ctxBG := context.Background()
 
 		var err error
 		switch style {
 		case models.WorkspaceTypeZettel:
+			log.Printf("[Job %s] Starting AutoConnectWorkspace for Zettel style.", jobID.Hex())
 			_, err = s.graphService.AutoConnectWorkspace(ctxBG, workspaceID)
+			if err != nil {
+				log.Printf("[Job %s] Error: AutoConnectWorkspace failed: %v", jobID.Hex(), err)
+			} else {
+				log.Printf("[Job %s] Success: AutoConnectWorkspace completed.", jobID.Hex())
+			}
 		case models.WorkspaceTypeGeneric, models.WorkspaceTypePara:
+			log.Printf("[Job %s] Starting ClearPendingConnections for %s style.", jobID.Hex(), style)
 			_, err = s.graphService.ClearPendingConnections(ctxBG, workspaceID)
+			if err != nil {
+				log.Printf("[Job %s] Error: ClearPendingConnections failed: %v", jobID.Hex(), err)
+			} else {
+				log.Printf("[Job %s] Success: ClearPendingConnections completed.", jobID.Hex())
+			}
 		}
 
 		status := "success"
@@ -200,7 +270,7 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 			status = "failed"
 		}
 
-		_, _ = s.db.Collection("workspace_jobs").UpdateOne(
+		_, updateErr := s.db.Collection("workspace_jobs").UpdateOne(
 			ctxBG,
 			bson.M{"_id": jobID},
 			bson.M{"$set": bson.M{
@@ -208,9 +278,43 @@ func (s *WorkspaceService) ChangeWorkspaceStyle(ctx context.Context, workspaceID
 				"updated_at": time.Now(),
 			}},
 		)
+
+		if updateErr != nil {
+			log.Printf("[Job %s] Fatal Error: Failed to update job status to '%s' in DB: %v", jobID.Hex(), status, updateErr)
+		} else {
+			log.Printf("[Job %s] Success: Job status updated to '%s'.", jobID.Hex(), status)
+		}
 	}(jobID, workspaceID, newStyle)
 
 	return fmt.Sprintf("changed to workspace type: '%s'. (async works: %s)", newStyle, jobID.Hex()), nil
+}
+
+func (s *WorkspaceService) FindAllWorkspacesByUserID(ctx context.Context, userID string) ([]*models.Workspace, error) {
+	if userID == "" {
+		return nil, errors.New("userID is blank")
+	}
+
+	filter := bson.M{"user_id": userID}
+	cursor, err := s.db.Collection("workspaces").Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find workspaces: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var workspaces []*models.Workspace
+	for cursor.Next(ctx) {
+		var ws models.Workspace
+		if err := cursor.Decode(&ws); err != nil {
+			return nil, fmt.Errorf("failed to decode workspace document: %w", err)
+		}
+		workspaces = append(workspaces, &ws)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor iteration error: %w", err)
+	}
+
+	return workspaces, nil
 }
 
 func isValidWorkspaceType(t string) bool {

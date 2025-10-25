@@ -47,6 +47,7 @@ func main() {
 
 	username := os.Getenv("YORKIE_ADMIN_USERNAME")
 	password := os.Getenv("YORKIE_ADMIN_PASSWORD")
+	authWebhookURL := os.Getenv("YORKIE_AUTH_WEBHOOK_URL")
 
 	if username != "" && password != "" {
 		token, err := yorkieAdmin.LogIn(context.Background(), username, password)
@@ -72,7 +73,7 @@ func main() {
 	log.Printf("Connected to Yorkie server version: %s", version.YorkieVersion)
 
 	graphService := services.NewGraphService(db)
-	workspaceService := services.NewWorkspaceService(db, graphService, yorkieAdmin)
+	workspaceService := services.NewWorkspaceService(db, graphService, yorkieAdmin, authWebhookURL)
 	router := server.NewServer(graphService, workspaceService)
 
 	port := os.Getenv("PORT")

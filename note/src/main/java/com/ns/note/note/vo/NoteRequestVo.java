@@ -8,7 +8,7 @@ public record NoteRequestVo(
         String contents
 ) {
     public static NoteRequestVo of(
-        String workspaceId,
+            String workspaceId,
             String title,
             String description,
             String contents

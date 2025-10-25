@@ -9,7 +9,13 @@ import com.ns.note.note.repository.NoteRepository;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -21,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static com.ns.note.exception.ExceptionStatus.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoteService {
@@ -99,6 +106,7 @@ public class NoteService {
         return noteRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ServiceException(ExceptionStatus.NOTE_NOT_FOUND));
     }
+
     private NoteResponseVo NoteEntitytoNoteResponseVo(NoteEntity note) {
         return new NoteResponseVo(
                 note.getId(),
@@ -160,9 +168,27 @@ public class NoteService {
 
     public List<String> getAllNoteIdsByWorkspace(String workspaceId) {
         return noteRepository.findAllByWorkspaceIdAndDeletedAtIsNull(workspaceId)
-                     .stream()
-                     .map(NoteEntity::getId)
-                     .collect(Collectors.toList());
+                .stream()
+                .map(NoteEntity::getId)
+                .collect(Collectors.toList());
 
+    }
+
+    public List<NoteResponseVo> searchNotesByKeyword(String workspaceId, String keyword, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, keyword='{}', Pageable={}", workspaceId, keyword, pageable.toString());
+        List<NoteEntity> entities = noteRepository.searchByKeywordAndWorkspaceId(workspaceId, keyword, pageable);
+
+        return entities.stream()
+                .map(this::NoteEntitytoNoteResponseVo)
+                .collect(Collectors.toList());
+    }
+
+    public List<NoteResponseVo> findRecentUpdatedNotes(String workspaceId, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, Pageable={}", workspaceId, pageable.toString());
+        List<NoteEntity> entities = noteRepository.findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(workspaceId, pageable);
+
+        return entities.stream()
+                .map(this::NoteEntitytoNoteResponseVo)
+                .collect(Collectors.toList());
     }
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 
 	"fmt"
 	"graph/models"
@@ -22,7 +23,6 @@ import (
 const (
 	StatusPending   = "pending"
 	StatusConfirmed = "confirmed"
-	StatusEdited    = "edited"
 )
 
 var topicUrl = os.Getenv("TOPIC_SERVICE_URL")
@@ -95,7 +95,8 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 		return nil, fmt.Errorf("failed to marshal content request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/api/find-similar/by-content", bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, topicUrl+"/find-similar/by-content", bytes.NewReader(reqBody))
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create content request: %w", err)
 	}
@@ -105,7 +106,7 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 }
 
 func fetchSimilarDocsByIDHTTP(ctx context.Context, docID string, topN int) ([]string, error) {
-	u, err := url.Parse(topicUrl + "/api/find-similar/by-id")
+	u, err := url.Parse(topicUrl + "/find-similar/by-id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse topic service URL: %w", err)
 	}
@@ -206,7 +207,7 @@ func (s *GraphService) NoteCreated(ctx context.Context, newDocID string, workspa
 	return connections, nil
 }
 
-func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
+func (s *GraphService) NoteDeleted(ctx context.Context, docID string, workspaceID string) error {
 	objID, err := objectIDFromHex(docID, "document")
 	if err != nil {
 		return err
@@ -214,10 +215,12 @@ func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
 
 	_, err = s.db.Collection("graph_connections").DeleteMany(
 		ctx,
-		bson.M{"$or": []bson.M{
-			{"source_id": objID},
-			{"target_id": objID},
-		}},
+		bson.M{
+			"workspace_id": workspaceID,
+			"$or": []bson.M{
+				{"source_id": objID},
+				{"target_id": objID},
+			}},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to delete related connections: %w", err)
@@ -225,7 +228,7 @@ func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
 	return nil
 }
 
-func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, targetID string) error {
+func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
 	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
 	if err != nil {
 		return fmt.Errorf("invalid source ID: %w", err)
@@ -237,13 +240,13 @@ func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, tar
 
 	_, err = s.db.Collection("graph_connections").UpdateOne(
 		ctx,
-		bson.M{"source_id": sourceObjID, "target_id": targetObjID},
+		bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID},
 		bson.M{"$set": bson.M{"status": StatusConfirmed, "updated_at": time.Now()}},
 	)
 	return err
 }
 
-func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string) error {
+func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
 	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
 	if err != nil {
 		return fmt.Errorf("invalid source ID: %w", err)
@@ -253,10 +256,16 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 		return fmt.Errorf("invalid target ID: %w", err)
 	}
 
+	newConn := makeConnection(sourceObjID, targetObjID, workspaceID, StatusPending)
+	opts := options.Update().SetUpsert(true)
+	filter := bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID}
+	update := bson.M{"$set": newConn}
+
 	_, err = s.db.Collection("graph_connections").UpdateOne(
 		ctx,
-		bson.M{"source_id": sourceObjID, "target_id": targetObjID},
-		bson.M{"$set": bson.M{"status": StatusEdited, "updated_at": time.Now()}},
+		filter,
+		update,
+		opts,
 	)
 	return err
 }
@@ -264,32 +273,39 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 func (s *GraphService) ConfirmAllConnections(ctx context.Context, workspaceID string) error {
 	_, err := s.db.Collection("graph_connections").UpdateMany(
 		ctx,
-		bson.M{"workspace_id": workspaceID, "status": bson.M{"$in": []string{StatusPending, StatusEdited}}},
+		bson.M{"workspace_id": workspaceID, "status": StatusPending},
 		bson.M{"$set": bson.M{"status": StatusConfirmed, "updated_at": time.Now()}},
 	)
 	return err
 }
 
 func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID string) ([]models.GraphConnection, error) {
+	log.Printf("[AutoConnect] Started for Workspace ID: %s", workspaceID)
+
 	docIDs, err := s.FetchDocumentIDs(ctx, workspaceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch workspace doc IDs: %w", err)
 	}
+	log.Printf("[AutoConnect] Fetched %d document IDs.", len(docIDs))
 
 	var connections []models.GraphConnection
 	connColl := s.db.Collection("graph_connections")
 
-	for _, docID := range docIDs {
+	for i, docID := range docIDs {
+		log.Printf("[AutoConnect %s/%d] Processing document ID: %s", workspaceID, i+1, docID)
 		sourceID, err := objectIDFromHex(docID, "source document")
 		if err != nil {
+			log.Printf("[AutoConnect %s] Warning: Invalid document ID %s, skipping.", workspaceID, docID)
 			continue
 		}
 
 		similarIDs, err := s.FetchSimilarByID(ctx, docID, 5)
 		if err != nil {
+			log.Printf("[AutoConnect %s] Warning: Failed to fetch similar docs for %s: %v, skipping.", workspaceID, docID, err)
 			continue
 		}
 
+		log.Printf("[AutoConnect %s] Found %d similar IDs for %s.", workspaceID, len(similarIDs), docID)
 		for _, targetIDStr := range similarIDs {
 			if docID == targetIDStr {
 				continue
@@ -297,6 +313,7 @@ func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID str
 
 			targetID, err := objectIDFromHex(targetIDStr, "target document")
 			if err != nil {
+				log.Printf("[AutoConnect %s] Warning: Invalid target ID %s, skipping connection.", workspaceID, targetIDStr)
 				continue
 			}
 
@@ -321,17 +338,22 @@ func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID str
 			*/
 		}
 	}
+
+	log.Printf("[AutoConnect] Finished. Total %d connections processed for WS ID: %s", len(connections), workspaceID)
 	return connections, nil
 }
 
 func (s *GraphService) ClearPendingConnections(ctx context.Context, workspaceID string) (int64, error) {
+	// pending 상태인 모든 연결을 삭제한다.
 	result, err := s.db.Collection("graph_connections").DeleteMany(
 		ctx,
-		bson.M{"workspace_id": workspaceID, "status": bson.M{"$in": []string{StatusPending, StatusEdited}}},
+		bson.M{"workspace_id": workspaceID, "status": StatusPending},
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to clear pending connections: %w", err)
 	}
+
+	log.Printf("[ClearConnections] Success: Deleted %d pending connections for WS ID: %s", result.DeletedCount, workspaceID)
 	return result.DeletedCount, nil
 }
 

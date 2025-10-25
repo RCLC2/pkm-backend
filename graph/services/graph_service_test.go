@@ -162,18 +162,19 @@ func TestGraphService_ConfirmGraphConnection(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	sourceID := "6517a2624a081a27e7d0f93a"
 	targetID := "6517a2624a081a27e7d0f93b"
+	workspaceID := "workspace1"
 	ctx := context.Background()
 
 	mt.Run("Success_UpdatesToConfirmed", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
 		mt.AddMockResponses(bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}})
-		err := service.ConfirmGraphConnection(ctx, sourceID, targetID)
+		err := service.ConfirmGraphConnection(ctx, sourceID, targetID, workspaceID)
 		assert.NoError(t, err)
 	})
 
 	mt.Run("Error_InvalidSourceID", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
-		err := service.ConfirmGraphConnection(ctx, "invalid", targetID)
+		err := service.ConfirmGraphConnection(ctx, "invalid", targetID, workspaceID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid source ID")
 	})
@@ -195,18 +196,19 @@ func TestGraphService_ConfirmAllConnections(t *testing.T) {
 func TestGraphService_NoteDeleted(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	docID := "6517a2624a081a27e7d0f93c"
+	workspaceID := "workspace1"
 	ctx := context.Background()
 
 	mt.Run("Success_DeletesRelatedConnections", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
 		mt.AddMockResponses(bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 0}, {Key: "deletedCount", Value: 2}})
-		err := service.NoteDeleted(ctx, docID)
+		err := service.NoteDeleted(ctx, docID, workspaceID)
 		assert.NoError(t, err)
 	})
 
 	mt.Run("Error_InvalidDocID", func(mt *mtest.T) {
 		service := services.NewGraphService(mt.DB)
-		err := service.NoteDeleted(ctx, "invalid")
+		err := service.NoteDeleted(ctx, "invalid", workspaceID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid document ID")
 	})
@@ -239,7 +241,7 @@ func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 				{Key: "_id", Value: primitive.NewObjectID()},
 				{Key: "source_id", Value: docID2},
 				{Key: "target_id", Value: docID1},
-				{Key: "status", Value: services.StatusEdited},
+				{Key: "status", Value: services.StatusPending},
 				{Key: "workspace_id", Value: workspaceID},
 				{Key: "created_at", Value: nowDT},
 				{Key: "updated_at", Value: nowDT},
@@ -260,6 +262,6 @@ func TestGraphService_GetWorkspaceGraphResponse(t *testing.T) {
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Edges, 2)
 		assert.Equal(t, services.StatusConfirmed, response.Edges[0].Status)
-		assert.Equal(t, services.StatusEdited, response.Edges[1].Status)
+		assert.Equal(t, services.StatusPending, response.Edges[1].Status)
 	})
 }

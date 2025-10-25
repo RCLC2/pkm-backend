@@ -3,15 +3,22 @@ package com.ns.note.note.controller;
 import com.ns.note.note.dto.request.NoteCreateRequestDto;
 import com.ns.note.note.dto.request.NoteUpdateRequestDto;
 import com.ns.note.note.dto.response.NoteResponseDto;
+import com.ns.note.note.dto.response.NoteSummaryResponseDto;
 import com.ns.note.note.service.NoteService;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import com.ns.note.response.GlobalResponseHandler;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import com.ns.note.response.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
@@ -95,4 +102,40 @@ public class NoteController {
         return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS,noteIds);
     }
 
+    // 문자열 keyword 기반 검색
+
+    @GetMapping("/search")
+    public ResponseEntity<GlobalResponseHandler<List<NoteSummaryResponseDto>>> searchNotesByKeyword(
+            @RequestParam @NotBlank String workspaceId,
+            @RequestParam @NotBlank String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt") String sort,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sort));
+        List<NoteResponseVo> noteVos = noteService.searchNotesByKeyword(workspaceId, keyword, pageRequest);
+
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS, noteVos.stream()
+                .map(NoteSummaryResponseDto::from)
+                .collect(Collectors.toList())
+        );
+    }
+    // 가장 최근에 변경된 문서 목록
+    @GetMapping("/recent")
+    public ResponseEntity<GlobalResponseHandler<List<NoteSummaryResponseDto>>> findRecentUpdatedNotes(
+            @RequestParam @NotBlank String workspaceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt") String sort,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sort));
+        List<NoteResponseVo> noteVos = noteService.findRecentUpdatedNotes(workspaceId, pageRequest);
+
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_SEARCH_SUCCESS, noteVos.stream()
+                .map(NoteSummaryResponseDto::from)
+                .collect(Collectors.toList())
+        );
+    }
 }
