@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.server.RequestPath;
@@ -16,7 +17,7 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component("Logging")
-public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<LoggingGatewayFilterFactory.Config> {
+public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<LoggingGatewayFilterFactory.Config> implements Ordered {
 
 
     public LoggingGatewayFilterFactory() {
@@ -38,6 +39,11 @@ public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<Lo
                 log.info("[{}] Response Status: {}. Message: {}", curLogLevel, statusCode, curMessage);
             }));
         };
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
     @Getter

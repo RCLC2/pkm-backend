@@ -55,7 +55,9 @@ spring:
           filters:
             - StripPrefix=3
             - Logging
-            - JwtAuthentication
+            - name: JwtAuthentication
+              args:
+                publicPaths: /api/v1/users/auth/google/callback
             - name: TimeLimiter
               args:
                 name: default
