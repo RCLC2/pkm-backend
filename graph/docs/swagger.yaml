@@ -20,7 +20,28 @@ paths:
           type: object
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 연결 확정 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "400":
+          description: '잘못된 요청 형식 (예: 필수 필드 누락)'
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 연결 확정 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 그래프 연결 확정
       tags:
       - Graph Connection
@@ -43,7 +64,28 @@ paths:
           type: object
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 연결 편집 상태 설정 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 연결 편집 상태 설정 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 그래프 연결 편집 상태로 설정
       tags:
       - Graph Connection
@@ -64,7 +106,28 @@ paths:
           type: object
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 노트 관련 그래프 연결 삭제 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 그래프 연결 삭제 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 노트 삭제 이벤트 처리
       tags:
       - Graph Connection
@@ -80,7 +143,29 @@ paths:
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 워크스페이스 목록 조회 성공 및 데이터 반환
+          schema:
+            properties:
+              data: {}
+              status:
+                type: string
+            type: object
+        "400":
+          description: X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 워크스페이스 목록 조회 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 사용자가 접근 가능한 모든 워크스페이스 조회
       tags:
       - Workspace
@@ -101,7 +186,30 @@ paths:
           type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 워크스페이스 생성 성공 및 ID 반환
+          schema:
+            properties:
+              status:
+                type: string
+              workspaceId:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식 또는 X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 워크스페이스 생성 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 생성
       tags:
       - Workspace
@@ -116,7 +224,28 @@ paths:
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 워크스페이스 삭제 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "400":
+          description: X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 워크스페이스 삭제 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 삭제
       tags:
       - Workspace
@@ -140,7 +269,30 @@ paths:
           type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 워크스페이스 수정 성공 및 메시지 반환
+          schema:
+            properties:
+              message:
+                type: string
+              status:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식 또는 X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 워크스페이스 수정 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 수정
       tags:
       - Workspace
@@ -156,7 +308,21 @@ paths:
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 모든 연결 확정 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 연결 확정 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 내 모든 '미완료' 연결 확정
       tags:
       - Workspace Graph
@@ -171,7 +337,22 @@ paths:
         type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 그래프 구조 조회 성공 및 데이터 반환
+          schema:
+            properties:
+              data: {}
+              status:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 그래프 조회 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 그래프 구조 조회
       tags:
       - Workspace Graph
@@ -192,7 +373,30 @@ paths:
           type: string
       produces:
       - application/json
-      responses: {}
+      responses:
+        "200":
+          description: 스타일 변경 성공 및 메시지 반환
+          schema:
+            properties:
+              message:
+                type: string
+              status:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식 또는 X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 스타일 변경 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
       summary: 워크스페이스 스타일 변경
       tags:
       - Workspace
@@ -214,22 +418,34 @@ paths:
       - application/json
       responses:
         "200":
-          description: '{"status": "success", "type": "generic"}'
+          description: 워크스페이스 타입 조회 성공 및 타입 반환
           schema:
-            additionalProperties:
-              type: string
+            properties:
+              status:
+                type: string
+              type:
+                type: string
+            type: object
+        "400":
+          description: X-User-ID 헤더 누락
+          schema:
+            properties:
+              error:
+                type: string
             type: object
         "404":
-          description: '{"error": "Workspace not found"}'
+          description: 워크스페이스를 찾을 수 없거나 접근 권한 없음
           schema:
-            additionalProperties:
-              type: string
+            properties:
+              error:
+                type: string
             type: object
         "500":
-          description: '{"error": "..."}'
+          description: 서버 내부 오류로 타입 조회 실패
           schema:
-            additionalProperties:
-              type: string
+            properties:
+              error:
+                type: string
             type: object
       summary: 워크스페이스 타입 조회
       tags:

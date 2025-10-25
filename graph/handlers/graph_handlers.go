@@ -23,6 +23,9 @@ func NewGraphConnectionHandler(gs *services.GraphService) *GraphConnectionHandle
 // @Accept json
 // @Produce json
 // @Param request body object{sourceId=string, targetId=string} true "연결을 확정할 Source 문서 ID 및 Target 문서 ID"
+// @Success 200 {object} object{status=string} "연결 확정 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식 (예: 필수 필드 누락)"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 확정 실패"
 // @Router /connections/confirm [post]
 func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 	var req struct {
@@ -47,6 +50,9 @@ func (h *GraphConnectionHandler) ConfirmGraphConnection(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{sourceId=string, targetId=string} true "편집 상태로 설정할 Source 문서 ID 및 Target 문서 ID"
+// @Success 200 {object} object{status=string} "연결 편집 상태 설정 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 편집 상태 설정 실패"
 // @Router /connections/edit [post]
 func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 	var req struct {
@@ -71,6 +77,9 @@ func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{noteId=string} true "삭제된 노트 ID"
+// @Success 200 {object} object{status=string} "노트 관련 그래프 연결 삭제 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 그래프 연결 삭제 실패"
 // @Router /connections/note-deleted [post]
 func (h *GraphConnectionHandler) DeleteNoteGraph(c *gin.Context) {
 	var req struct {

@@ -27,6 +27,9 @@ func NewWorkspaceGraphHandler(gs *services.GraphService, ws *services.WorkspaceS
 // @Produce json
 // @Param name body string true "워크스페이스 이름"
 // @Param type body string true "워크스페이스 타입"
+// @Success 200 {object} object{status=string,workspaceId=string} "워크스페이스 생성 성공 및 ID 반환"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 생성 실패"
 // @Router /workspaces [post]
 func (h *WorkspaceGraphHandler) CreateWorkspace(c *gin.Context) {
 	var req struct {
@@ -60,6 +63,9 @@ func (h *WorkspaceGraphHandler) CreateWorkspace(c *gin.Context) {
 // @Param workspaceId path string true "수정할 워크스페이스 ID"
 // @Param name body string false "새 워크스페이스 이름"
 // @Param type body string false "새 워크스페이스 타입"
+// @Success 200 {object} object{status=string,message=string} "워크스페이스 수정 성공 및 메시지 반환"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 수정 실패"
 // @Router /workspaces/{workspaceId} [put]
 func (h *WorkspaceGraphHandler) UpdateWorkspace(c *gin.Context) {
 	userID := c.GetHeader("X-User-ID")
@@ -91,6 +97,9 @@ func (h *WorkspaceGraphHandler) UpdateWorkspace(c *gin.Context) {
 // @Tags Workspace
 // @Produce json
 // @Param workspaceId path string true "삭제할 워크스페이스 ID"
+// @Success 200 {object} object{status=string} "워크스페이스 삭제 성공"
+// @Failure 400 {object} object{error=string} "X-User-ID 헤더 누락"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 삭제 실패"
 // @Router /workspaces/{workspaceId} [delete]
 func (h *WorkspaceGraphHandler) DeleteWorkspace(c *gin.Context) {
 	workspaceID := c.Param("workspaceId")
@@ -113,6 +122,8 @@ func (h *WorkspaceGraphHandler) DeleteWorkspace(c *gin.Context) {
 // @Tags Workspace Graph
 // @Produce json
 // @Param workspaceId path string true "조회할 워크스페이스 ID"
+// @Success 200 {object} object{status=string,data=interface{}} "그래프 구조 조회 성공 및 데이터 반환"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 그래프 조회 실패"
 // @Router /workspaces/{workspaceId}/graph [get]
 func (h *WorkspaceGraphHandler) GetWorkspaceGraph(c *gin.Context) {
 	workspaceID := c.Param("workspaceId")
@@ -131,6 +142,9 @@ func (h *WorkspaceGraphHandler) GetWorkspaceGraph(c *gin.Context) {
 // @Produce json
 // @Param workspaceId path string true "변경할 워크스페이스 ID"
 // @Param newStyle body string true "새 워크스페이스 스타일 (zettel, generic, para)"
+// @Success 200 {object} object{status=string,message=string} "스타일 변경 성공 및 메시지 반환"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 스타일 변경 실패"
 // @Router /workspaces/{workspaceId}/style [post]
 func (h *WorkspaceGraphHandler) ChangeWorkspaceStyle(c *gin.Context) {
 	workspaceID := c.Param("workspaceId")
@@ -163,6 +177,8 @@ func (h *WorkspaceGraphHandler) ChangeWorkspaceStyle(c *gin.Context) {
 // @Tags Workspace Graph
 // @Produce json
 // @Param workspaceId path string true "연결을 일괄 확정할 워크스페이스 ID"
+// @Success 200 {object} object{status=string} "모든 연결 확정 성공"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 확정 실패"
 // @Router /workspaces/{workspaceId}/confirm-all [post]
 func (h *WorkspaceGraphHandler) ConfirmAllConnections(c *gin.Context) {
 	workspaceID := c.Param("workspaceId")
@@ -180,9 +196,10 @@ func (h *WorkspaceGraphHandler) ConfirmAllConnections(c *gin.Context) {
 // @Produce json
 // @Param workspaceId path string true "조회할 워크스페이스 ID"
 // @Param X-User-ID header string true "사용자 ID"
-// @Success 200 {object} map[string]string "{"status": "success", "type": "generic"}"
-// @Failure 404 {object} map[string]string "{"error": "Workspace not found"}"
-// @Failure 500 {object} map[string]string "{"error": "..."}"
+// @Success 200 {object} object{status=string,type=string} "워크스페이스 타입 조회 성공 및 타입 반환"
+// @Failure 400 {object} object{error=string} "X-User-ID 헤더 누락"
+// @Failure 404 {object} object{error=string} "워크스페이스를 찾을 수 없거나 접근 권한 없음"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 타입 조회 실패"
 // @Router /workspaces/{workspaceId}/type [get]
 func (h *WorkspaceGraphHandler) GetWorkspaceType(c *gin.Context) {
 	workspaceID := c.Param("workspaceId")
@@ -213,6 +230,9 @@ func (h *WorkspaceGraphHandler) GetWorkspaceType(c *gin.Context) {
 // @Tags Workspace
 // @Produce json
 // @Param X-User-ID header string true "사용자 ID"
+// @Success 200 {object} object{status=string,data=interface{}} "워크스페이스 목록 조회 성공 및 데이터 반환"
+// @Failure 400 {object} object{error=string} "X-User-ID 헤더 누락"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 목록 조회 실패"
 // @Router /workspaces [get]
 func (h *WorkspaceGraphHandler) FindAllWorkspaces(c *gin.Context) {
 	userID := c.GetHeader("X-User-ID")
