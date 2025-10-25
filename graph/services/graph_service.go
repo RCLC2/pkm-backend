@@ -353,7 +353,7 @@ func (s *GraphService) ClearPendingConnections(ctx context.Context, workspaceID 
 		return 0, fmt.Errorf("failed to clear pending connections: %w", err)
 	}
 
-	log.Printf("[ClearConnections] Success: Deleted %d pending/edited connections for WS ID: %s", result.DeletedCount, workspaceID)
+	log.Printf("[ClearConnections] Success: Deleted %d pending connections for WS ID: %s", result.DeletedCount, workspaceID)
 	return result.DeletedCount, nil
 }
 
