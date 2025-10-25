@@ -13,9 +13,11 @@ paths:
         required: true
         schema:
           properties:
-            ' targetId':
-              type: string
             sourceId:
+              type: string
+            targetId:
+              type: string
+            workspaceId:
               type: string
           type: object
       produces:
@@ -57,9 +59,11 @@ paths:
         required: true
         schema:
           properties:
-            ' targetId':
-              type: string
             sourceId:
+              type: string
+            targetId:
+              type: string
+            workspaceId:
               type: string
           type: object
       produces:
@@ -102,6 +106,8 @@ paths:
         schema:
           properties:
             noteId:
+              type: string
+            workspaceId:
               type: string
           type: object
       produces:
@@ -172,18 +178,22 @@ paths:
     post:
       description: 새로운 워크스페이스를 생성합니다. 생성자는 X-User-ID 헤더에서 가져옵니다.
       parameters:
-      - description: 워크스페이스 이름
+      - description: 사용자 인증을 위한 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: '워크스페이스 생성 요청 본문(type: generic, zettel, para)'
         in: body
-        name: name
+        name: request
         required: true
         schema:
-          type: string
-      - description: 워크스페이스 타입
-        in: body
-        name: type
-        required: true
-        schema:
-          type: string
+          properties:
+            title:
+              type: string
+            type:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
@@ -222,6 +232,11 @@ paths:
         name: workspaceId
         required: true
         type: string
+      - description: 사용자 인증을 위한 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -257,16 +272,22 @@ paths:
         name: workspaceId
         required: true
         type: string
-      - description: 새 워크스페이스 이름
+      - description: 사용자 인증을 위한 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: '워크스페이스 수정 요청 본문(type: generic, zettel, para)'
         in: body
-        name: name
+        name: request
+        required: true
         schema:
-          type: string
-      - description: 새 워크스페이스 타입
-        in: body
-        name: type
-        schema:
-          type: string
+          properties:
+            title:
+              type: string
+            type:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
@@ -365,12 +386,20 @@ paths:
         name: workspaceId
         required: true
         type: string
-      - description: 새 워크스페이스 스타일 (zettel, generic, para)
+      - description: 사용자 인증을 위한 ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: (zettel, generic, para)
         in: body
         name: newStyle
         required: true
         schema:
-          type: string
+          properties:
+            newStyle:
+              type: string
+          type: object
       produces:
       - application/json
       responses:

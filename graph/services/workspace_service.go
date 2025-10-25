@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"graph/models"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -23,8 +24,23 @@ type WorkspaceService struct {
 	authWebhookURL string
 }
 
+var nonSlugChar = regexp.MustCompile(`[^a-z0-9-]+`)
+
+func toSlug(s string) string {
+	s = strings.ToLower(s)
+	s = nonSlugChar.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	s = strings.ReplaceAll(s, "--", "-")
+	return s
+}
+
 func NewWorkspaceService(db *mongo.Database, gs *GraphService, yorkieAdmin *admin.Client, authWebhookURL string) *WorkspaceService {
-	return &WorkspaceService{db: db, graphService: gs}
+	return &WorkspaceService{
+		db:             db,
+		graphService:   gs,
+		yorkieAdmin:    yorkieAdmin,
+		authWebhookURL: authWebhookURL,
+	}
 }
 
 func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, userID string) (string, error) {
@@ -41,7 +57,13 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, u
 		return "", errors.New("yorkieAdmin client is not initialized")
 	}
 
-	projectName := fmt.Sprintf("workspace-%s-%s", userID, title)
+	slugTitle := toSlug(title)
+
+	if slugTitle == "" {
+		return "", errors.New("workspace title is too generic or empty after slug transformation")
+	}
+
+	projectName := fmt.Sprintf("workspace-%s-%s", userID, slugTitle)
 	project, err := s.yorkieAdmin.CreateProject(ctx, projectName)
 	if err != nil {
 		return "", fmt.Errorf("failed to create yorkie project: %w", err)
@@ -100,10 +122,35 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 		return "", fmt.Errorf("invalid workspaceID: %w", err)
 	}
 
-	setMap := bson.M{"updated_at": time.Now()}
-	if title != nil {
-		setMap["title"] = *title
+	var currentWs models.Workspace
+	err = s.db.Collection("workspaces").FindOne(ctx, bson.M{"_id": objID, "user_id": userID}).Decode(&currentWs)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", errors.New("workspace not found or unauthorized")
+		}
+		return "", fmt.Errorf("failed to fetch workspace: %w", err)
 	}
+
+	setMap := bson.M{"updated_at": time.Now()}
+
+	if title != nil && currentWs.Title != *title {
+		setMap["title"] = *title
+
+		if s.yorkieAdmin != nil {
+			slugTitle := toSlug(*title)
+			newProjectName := fmt.Sprintf("workspace-%s-%s", currentWs.UserID, slugTitle)
+
+			_, err = s.yorkieAdmin.UpdateProject(ctx, currentWs.YorkieProjectID, &types.UpdatableProjectFields{
+				Name: &newProjectName,
+			})
+			if err != nil {
+				log.Printf("failed to update yorkie project name for %s: %v", currentWs.YorkieProjectID, err)
+			}
+		} else {
+			log.Println("yorkieAdmin client is nil, cannot update project name")
+		}
+	}
+
 	if wsType != nil {
 		t := strings.ToLower(strings.TrimSpace(*wsType))
 		if !isValidWorkspaceType(t) {
@@ -113,15 +160,17 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 	}
 
 	res, err := s.db.Collection("workspaces").UpdateOne(ctx,
-		bson.M{"_id": objID, "USER_ID": userID},
+		bson.M{"_id": objID, "user_id": userID},
 		bson.M{"$set": setMap},
 	)
 	if err != nil {
 		return "", err
 	}
+
 	if res.MatchedCount == 0 {
 		return "", errors.New("workspace not found or unauthorized")
 	}
+
 	msg := "workspace updated successfully"
 	if res.ModifiedCount == 0 {
 		msg = "no changes applied"

@@ -18,9 +18,9 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	workspaceHandler := handlers.NewWorkspaceGraphHandler(gs, ws)
 
 	// 그래프 연결 관리
-	router.POST("/graphs/connect/confirm", graphHandler.ConfirmGraphConnection)
-	router.POST("/graphs/connect/edit", graphHandler.EditGraphConnection)
-	router.POST("/graphs/connections/note-deleted", graphHandler.DeleteNoteGraph)
+	router.POST("/connections/confirm", graphHandler.ConfirmGraphConnection)
+	router.POST("/connections/edit", graphHandler.EditGraphConnection)
+	router.POST("/connections/note-deleted", graphHandler.DeleteNoteGraph)
 
 	// 워크스페이스 관리
 	router.GET("/workspaces", workspaceHandler.FindAllWorkspaces)
@@ -32,7 +32,7 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	router.GET("/workspaces/:workspaceId/graph", workspaceHandler.GetWorkspaceGraph)
 
 	// 워크스페이스 타입 변환
-	router.POST("/workspaces/:workspaceId/change-style", workspaceHandler.ChangeWorkspaceStyle)
+	router.POST("/workspaces/:workspaceId/style", workspaceHandler.ChangeWorkspaceStyle)
 
 	// 워크스페이스 내 모든 미확정 연결 확정
 	router.POST("/workspaces/:workspaceId/confirm-all", workspaceHandler.ConfirmAllConnections)

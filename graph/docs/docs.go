@@ -37,10 +37,13 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
-                                " targetId": {
+                                "sourceId": {
                                     "type": "string"
                                 },
-                                "sourceId": {
+                                "targetId": {
+                                    "type": "string"
+                                },
+                                "workspaceId": {
                                     "type": "string"
                                 }
                             }
@@ -106,10 +109,13 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
-                                " targetId": {
+                                "sourceId": {
                                     "type": "string"
                                 },
-                                "sourceId": {
+                                "targetId": {
+                                    "type": "string"
+                                },
+                                "workspaceId": {
                                     "type": "string"
                                 }
                             }
@@ -176,6 +182,9 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "noteId": {
+                                    "type": "string"
+                                },
+                                "workspaceId": {
                                     "type": "string"
                                 }
                             }
@@ -286,21 +295,27 @@ const docTemplate = `{
                 "summary": "워크스페이스 생성",
                 "parameters": [
                     {
-                        "description": "워크스페이스 이름",
-                        "name": "name",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                        "type": "string",
+                        "description": "사용자 인증을 위한 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
                     },
                     {
-                        "description": "워크스페이스 타입",
-                        "name": "type",
+                        "description": "워크스페이스 생성 요청 본문(type: generic, zettel, para)",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],
@@ -363,19 +378,27 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "새 워크스페이스 이름",
-                        "name": "name",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "type": "string",
+                        "description": "사용자 인증을 위한 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
                     },
                     {
-                        "description": "새 워크스페이스 타입",
-                        "name": "type",
+                        "description": "워크스페이스 수정 요청 본문(type: generic, zettel, para)",
+                        "name": "request",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],
@@ -433,6 +456,13 @@ const docTemplate = `{
                         "description": "삭제할 워크스페이스 ID",
                         "name": "workspaceId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "사용자 인증을 위한 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -583,12 +613,24 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "새 워크스페이스 스타일 (zettel, generic, para)",
+                        "type": "string",
+                        "description": "사용자 인증을 위한 ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "(zettel, generic, para)",
                         "name": "newStyle",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                                "newStyle": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],

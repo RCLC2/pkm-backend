@@ -207,7 +207,7 @@ func (s *GraphService) NoteCreated(ctx context.Context, newDocID string, workspa
 	return connections, nil
 }
 
-func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
+func (s *GraphService) NoteDeleted(ctx context.Context, docID string, workspaceID string) error {
 	objID, err := objectIDFromHex(docID, "document")
 	if err != nil {
 		return err
@@ -215,10 +215,12 @@ func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
 
 	_, err = s.db.Collection("graph_connections").DeleteMany(
 		ctx,
-		bson.M{"$or": []bson.M{
-			{"source_id": objID},
-			{"target_id": objID},
-		}},
+		bson.M{
+			"workspace_id": workspaceID,
+			"$or": []bson.M{
+				{"source_id": objID},
+				{"target_id": objID},
+			}},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to delete related connections: %w", err)
@@ -226,7 +228,7 @@ func (s *GraphService) NoteDeleted(ctx context.Context, docID string) error {
 	return nil
 }
 
-func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, targetID string) error {
+func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
 	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
 	if err != nil {
 		return fmt.Errorf("invalid source ID: %w", err)
@@ -238,13 +240,30 @@ func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, tar
 
 	_, err = s.db.Collection("graph_connections").UpdateOne(
 		ctx,
-		bson.M{"source_id": sourceObjID, "target_id": targetObjID},
+		bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID},
 		bson.M{"$set": bson.M{"status": StatusConfirmed, "updated_at": time.Now()}},
 	)
 	return err
 }
 
-func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string) error {
+func (s *GraphService) prepareEditedUpdate(sourceObjID, targetObjID primitive.ObjectID, workspaceID string) bson.M {
+	editedConn := makeConnection(sourceObjID, targetObjID, workspaceID, StatusEdited)
+
+	return bson.M{
+		"$set": bson.M{
+			"source_id":    editedConn.SourceID,
+			"target_id":    editedConn.TargetID,
+			"status":       editedConn.Status,
+			"workspace_id": editedConn.WorkspaceID,
+			"updated_at":   editedConn.UpdatedAt,
+		},
+		"$setOnInsert": bson.M{
+			"created_at": editedConn.CreatedAt,
+		},
+	}
+}
+
+func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
 	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
 	if err != nil {
 		return fmt.Errorf("invalid source ID: %w", err)
@@ -254,10 +273,15 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 		return fmt.Errorf("invalid target ID: %w", err)
 	}
 
+	opts := options.Update().SetUpsert(true)
+	update := s.prepareEditedUpdate(sourceObjID, targetObjID, workspaceID)
+	filter := bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID}
+
 	_, err = s.db.Collection("graph_connections").UpdateOne(
 		ctx,
-		bson.M{"source_id": sourceObjID, "target_id": targetObjID},
-		bson.M{"$set": bson.M{"status": StatusEdited, "updated_at": time.Now()}},
+		filter,
+		update,
+		opts,
 	)
 	return err
 }

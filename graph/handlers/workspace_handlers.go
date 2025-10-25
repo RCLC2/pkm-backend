@@ -25,16 +25,16 @@ func NewWorkspaceGraphHandler(gs *services.GraphService, ws *services.WorkspaceS
 // @Description 새로운 워크스페이스를 생성합니다. 생성자는 X-User-ID 헤더에서 가져옵니다.
 // @Tags Workspace
 // @Produce json
-// @Param name body string true "워크스페이스 이름"
-// @Param type body string true "워크스페이스 타입"
+// @Param X-User-ID header string true "사용자 인증을 위한 ID"
+// @Param request body object{title=string,type=string} true "워크스페이스 생성 요청 본문(type: generic, zettel, para)"
 // @Success 200 {object} object{status=string,workspaceId=string} "워크스페이스 생성 성공 및 ID 반환"
 // @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
 // @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 생성 실패"
 // @Router /workspaces [post]
 func (h *WorkspaceGraphHandler) CreateWorkspace(c *gin.Context) {
 	var req struct {
-		Name string `json:"name" binding:"required"`
-		Type string `json:"type" binding:"required"`
+		Title string `json:"title" binding:"required"`
+		Type  string `json:"type" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -47,9 +47,9 @@ func (h *WorkspaceGraphHandler) CreateWorkspace(c *gin.Context) {
 		return
 	}
 
-	workspaceID, err := h.ws.CreateWorkspace(c.Request.Context(), req.Name, req.Type, userID)
+	workspaceID, err := h.ws.CreateWorkspace(c.Request.Context(), req.Title, req.Type, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create workspace"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create workspace: %s", err.Error())})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "workspaceId": workspaceID})
@@ -61,8 +61,8 @@ func (h *WorkspaceGraphHandler) CreateWorkspace(c *gin.Context) {
 // @Tags Workspace
 // @Produce json
 // @Param workspaceId path string true "수정할 워크스페이스 ID"
-// @Param name body string false "새 워크스페이스 이름"
-// @Param type body string false "새 워크스페이스 타입"
+// @Param X-User-ID header string true "사용자 인증을 위한 ID"
+// @Param request body object{title=string,type=string} true "워크스페이스 수정 요청 본문(type: generic, zettel, para)"
 // @Success 200 {object} object{status=string,message=string} "워크스페이스 수정 성공 및 메시지 반환"
 // @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
 // @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 수정 실패"
@@ -76,14 +76,14 @@ func (h *WorkspaceGraphHandler) UpdateWorkspace(c *gin.Context) {
 
 	workspaceID := c.Param("workspaceId")
 	var req struct {
-		Name *string `json:"name"`
-		Type *string `json:"type"`
+		Title *string `json:"title"`
+		Type  *string `json:"type"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	msg, err := h.ws.UpdateWorkspace(c.Request.Context(), workspaceID, userID, req.Name, req.Type)
+	msg, err := h.ws.UpdateWorkspace(c.Request.Context(), workspaceID, userID, req.Title, req.Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update workspace: %s", err.Error())})
 		return
@@ -97,6 +97,7 @@ func (h *WorkspaceGraphHandler) UpdateWorkspace(c *gin.Context) {
 // @Tags Workspace
 // @Produce json
 // @Param workspaceId path string true "삭제할 워크스페이스 ID"
+// @Param X-User-ID header string true "사용자 인증을 위한 ID"
 // @Success 200 {object} object{status=string} "워크스페이스 삭제 성공"
 // @Failure 400 {object} object{error=string} "X-User-ID 헤더 누락"
 // @Failure 500 {object} object{error=string} "서버 내부 오류로 워크스페이스 삭제 실패"
@@ -141,7 +142,8 @@ func (h *WorkspaceGraphHandler) GetWorkspaceGraph(c *gin.Context) {
 // @Tags Workspace
 // @Produce json
 // @Param workspaceId path string true "변경할 워크스페이스 ID"
-// @Param newStyle body string true "새 워크스페이스 스타일 (zettel, generic, para)"
+// @Param X-User-ID header string true "사용자 인증을 위한 ID"
+// @Param newStyle body object{newStyle=string} true "(zettel, generic, para)"
 // @Success 200 {object} object{status=string,message=string} "스타일 변경 성공 및 메시지 반환"
 // @Failure 400 {object} object{error=string} "잘못된 요청 형식 또는 X-User-ID 헤더 누락"
 // @Failure 500 {object} object{error=string} "서버 내부 오류로 스타일 변경 실패"
