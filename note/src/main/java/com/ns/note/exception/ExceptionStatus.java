@@ -23,7 +23,8 @@ public enum ExceptionStatus {
     OWNER_PERMISSION_REGISTER_FAILED(HttpStatus.BAD_REQUEST,"노트 소유자 권한 등록 중 오류가 발생했습니다."),
     NOTE_SERVICE_NOT_AUTHENTICATION_ROLE(HttpStatus.BAD_REQUEST ,"접근 권한(ROLE)이 적절하지않은 사용자입니다."),
     USER_SERVICE_ACCESS_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "USER 서비스 도메인에 접근할 수 없습니다."),
-    USER_SERVICE_INVALID_ROLE(HttpStatus.BAD_REQUEST, "USER 서비스에서 잘못된 역할이 전달되었습니다.");
+    USER_SERVICE_INVALID_ROLE(HttpStatus.BAD_REQUEST, "USER 서비스에서 잘못된 역할이 전달되었습니다."),
+    NOTE_PARA_MAPPING_INCOMPLETE(HttpStatus.BAD_REQUEST, "모든 노트가 PARA 카테고리로 매핑되어야 합니다." );
 
     private final int statusCode;
     private final String message;

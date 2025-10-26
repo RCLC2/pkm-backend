@@ -1,5 +1,6 @@
 package com.ns.note.note.dto.request;
 
+import com.ns.note.note.entity.ParaCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,4 +13,5 @@ public class NoteUpdateRequestDto {
     private String title;
     private String description;
     private String contents;
+    private ParaCategory paraCategory;
 }

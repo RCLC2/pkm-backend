@@ -1,5 +1,7 @@
 package com.ns.note.note.vo;
 
+import com.ns.note.note.entity.ParaCategory;
+
 import java.time.Instant;
 
 // 노트 정보 반환 Vo
@@ -9,6 +11,7 @@ public record NoteResponseVo(
         String title,
         String description,
         String contents,
+        ParaCategory paraCategory,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -18,6 +21,7 @@ public record NoteResponseVo(
             String title,
             String description,
             String contents,
+            ParaCategory paraCategory,
             Instant createdAt,
             Instant updatedAt
     ){
@@ -27,6 +31,7 @@ public record NoteResponseVo(
                 title,
                 description,
                 contents,
+                paraCategory,
                 createdAt,
                 updatedAt);
     }

@@ -1,6 +1,7 @@
 package com.ns.note.note.controller;
 
 import com.ns.note.note.dto.request.NoteCreateRequestDto;
+import com.ns.note.note.dto.request.NoteParaMappingRequestDto;
 import com.ns.note.note.dto.request.NoteUpdateRequestDto;
 import com.ns.note.note.dto.response.NoteResponseDto;
 import com.ns.note.note.dto.response.NoteSummaryResponseDto;
@@ -9,16 +10,13 @@ import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import com.ns.note.response.GlobalResponseHandler;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import com.ns.note.response.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +37,8 @@ public class NoteController {
                 dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
-                dto.getContents()
+                dto.getContents(),
+                dto.getParaCategory()
         );
 
         NoteResponseVo responseVo = noteService.createNewNote(vo, authorization);
@@ -61,7 +60,8 @@ public class NoteController {
                 dto.getWorkspaceId(),
                 dto.getTitle(),
                 dto.getDescription(),
-                dto.getContents()
+                dto.getContents(),
+                dto.getParaCategory()
         );
 
         NoteResponseVo note = noteService.updateNote(id, vo, authorization);
@@ -138,4 +138,14 @@ public class NoteController {
                 .collect(Collectors.toList())
         );
     }
+
+    @PostMapping("/para-mapping")
+    public ResponseEntity<GlobalResponseHandler<Void>> updateParaMapping(
+            @RequestBody NoteParaMappingRequestDto request) {
+
+        noteService.updateParaMappings(request.toVo());
+
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_PARA_MAPPING_SUCCESS);
+    }
+
 }
