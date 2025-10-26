@@ -28,6 +28,9 @@ public class NoteEntity {
     @Field(type = FieldType.Text, analyzer = "nori_analyzer")
     private String contents;
 
+    @Field(type = FieldType.Keyword)
+    private ParaCategory paraCategory;
+
     @CreatedDate
     @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
     private Instant createdAt;
@@ -39,11 +42,12 @@ public class NoteEntity {
     @Field(type = FieldType.Date_Nanos, format = DateFormat.date_time)
     private Instant deletedAt;
 
-    public void update(String workspaceId, String title, String description, String contents) {
+    public void update(String workspaceId, String title, String description, String contents, ParaCategory paraCategory) {
         this.workspaceId = workspaceId;
         this.title = title;
         this.description = description;
         this.contents = contents;
+        this.paraCategory = paraCategory;
         this.updatedAt = Instant.now();
     }
 

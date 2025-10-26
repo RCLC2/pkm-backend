@@ -51,4 +51,19 @@ public interface NoteRepository extends ElasticsearchRepository<NoteEntity, Stri
 
     List<NoteEntity> findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(String workspaceId, Pageable pageable);
 
+
+    @Query("""
+{
+  "_source": false,
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "workspaceId.keyword": "?0" } },
+        { "bool": { "must_not": { "exists": { "field": "deletedAt" } } } }
+      ]
+    }
+  }
+}
+""")
+    List<NoteEntity> findAllIdsByWorkspaceIdAndDeletedAtIsNull(String workspaceId);
 }

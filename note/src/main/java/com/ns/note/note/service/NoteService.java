@@ -6,6 +6,7 @@ import com.ns.note.note.dto.request.OwnerRegisterRequestDto;
 import com.ns.note.note.dto.response.ResponseHandlerDto;
 import com.ns.note.note.entity.NoteEntity;
 import com.ns.note.note.repository.NoteRepository;
+import com.ns.note.note.vo.NoteParaMappingVo;
 import com.ns.note.note.vo.NoteRequestVo;
 import com.ns.note.note.vo.NoteResponseVo;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +46,7 @@ public class NoteService {
                 .workspaceId(vo.workspaceId())
                 .title(vo.title())
                 .description(vo.description())
+                .paraCategory(vo.paraCategory())
                 .contents(vo.contents())
                 .build();
 
@@ -70,7 +74,7 @@ public class NoteService {
 
         NoteEntity note = getActiveNoteById(id);
 
-        note.update(vo.workspaceId(), vo.title(), vo.description(), vo.contents());
+        note.update(vo.workspaceId(), vo.title(), vo.description(), vo.contents(),vo.paraCategory());
 
         NoteEntity updatedNote = noteRepository.save(note);
 
@@ -101,6 +105,64 @@ public class NoteService {
         noteRepository.save(note);
     }
 
+    public List<String> getAllNoteIdsByWorkspace(String workspaceId) {
+        return noteRepository.findAllByWorkspaceIdAndDeletedAtIsNull(workspaceId)
+                .stream()
+                .map(NoteEntity::getId)
+                .collect(Collectors.toList());
+
+    }
+
+    public List<NoteResponseVo> searchNotesByKeyword(String workspaceId, String keyword, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, keyword='{}', Pageable={}", workspaceId, keyword, pageable.toString());
+        List<NoteEntity> entities = noteRepository.searchByKeywordAndWorkspaceId(workspaceId, keyword, pageable);
+
+        return entities.stream()
+                .map(this::NoteEntitytoNoteResponseVo)
+                .collect(Collectors.toList());
+    }
+
+    public List<NoteResponseVo> findRecentUpdatedNotes(String workspaceId, Pageable pageable) {
+        log.info("Parameters: workspaceId={}, Pageable={}", workspaceId, pageable.toString());
+        List<NoteEntity> entities = noteRepository.findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(workspaceId, pageable);
+
+        return entities.stream()
+                .map(this::NoteEntitytoNoteResponseVo)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateParaMappings(NoteParaMappingVo vo) {
+        String workspaceId = vo.workspaceId();
+
+        List<String> allNoteIds = noteRepository.findAllIdsByWorkspaceIdAndDeletedAtIsNull(workspaceId)
+                .stream()
+                .map(NoteEntity::getId)
+                .toList();
+
+        List<String> mappedIds = vo.mappings().stream()
+                .map(NoteParaMappingVo.MappingItem::noteId)
+                .toList();
+
+        // 순서 무관, 전체 포함 여부 검증
+        if (!new HashSet<>(allNoteIds).containsAll(mappedIds) || allNoteIds.size() != mappedIds.size()) {
+            throw new ServiceException(ExceptionStatus.NOTE_PARA_MAPPING_INCOMPLETE);
+        }
+
+        // 각 노트 업데이트
+        for (NoteParaMappingVo.MappingItem item : vo.mappings()) {
+            NoteEntity note = getActiveNoteById(item.noteId());
+
+            note.update(
+                    note.getWorkspaceId(),
+                    note.getTitle(),
+                    note.getDescription(),
+                    note.getContents(),
+                    item.paraCategory()
+            );
+        }
+    }
+
     // 삭제되지 않은 노트 조회
     private NoteEntity getActiveNoteById(String id) {
         return noteRepository.findByIdAndDeletedAtIsNull(id)
@@ -114,6 +176,7 @@ public class NoteService {
                 note.getTitle(),
                 note.getDescription(),
                 note.getContents(),
+                note.getParaCategory(),
                 note.getCreatedAt(),
                 note.getUpdatedAt()
         );
@@ -166,29 +229,4 @@ public class NoteService {
 
     }
 
-    public List<String> getAllNoteIdsByWorkspace(String workspaceId) {
-        return noteRepository.findAllByWorkspaceIdAndDeletedAtIsNull(workspaceId)
-                .stream()
-                .map(NoteEntity::getId)
-                .collect(Collectors.toList());
-
-    }
-
-    public List<NoteResponseVo> searchNotesByKeyword(String workspaceId, String keyword, Pageable pageable) {
-        log.info("Parameters: workspaceId={}, keyword='{}', Pageable={}", workspaceId, keyword, pageable.toString());
-        List<NoteEntity> entities = noteRepository.searchByKeywordAndWorkspaceId(workspaceId, keyword, pageable);
-
-        return entities.stream()
-                .map(this::NoteEntitytoNoteResponseVo)
-                .collect(Collectors.toList());
-    }
-
-    public List<NoteResponseVo> findRecentUpdatedNotes(String workspaceId, Pageable pageable) {
-        log.info("Parameters: workspaceId={}, Pageable={}", workspaceId, pageable.toString());
-        List<NoteEntity> entities = noteRepository.findAllByWorkspaceIdAndDeletedAtIsNullOrderByUpdatedAtDesc(workspaceId, pageable);
-
-        return entities.stream()
-                .map(this::NoteEntitytoNoteResponseVo)
-                .collect(Collectors.toList());
-    }
 }

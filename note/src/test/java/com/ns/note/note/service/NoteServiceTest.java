@@ -41,7 +41,7 @@ class NoteServiceTest {
     @Test
     void createNewNote_success() {
         // given
-        NoteRequestVo vo = new NoteRequestVo("1", "title", "desc", "contents");
+        NoteRequestVo vo = new NoteRequestVo("1", "title", "desc", "contents", null);
         NoteEntity saved = NoteEntity.builder()
         .workspaceId("1")
                 .title("title")
@@ -96,14 +96,14 @@ class NoteServiceTest {
         ).thenReturn(ResponseEntity.ok(mockResponse));
 
         // when
-        NoteResponseVo result = noteService.updateNote(id, new NoteRequestVo("1", "new", "new", "new"),"Bearer test-token");
+        NoteResponseVo result = noteService.updateNote(id,  new NoteRequestVo("1", "title", "desc", "contents", null),"Bearer test-token");
 
         // then
         assertThat(result.id()).isEqualTo(id);
         assertThat(result.workspaceId()).isEqualTo("1");
-        assertThat(result.title()).isEqualTo("new");
-        assertThat(result.description()).isEqualTo("new");
-        assertThat(result.contents()).isEqualTo("new");
+        assertThat(result.title()).isEqualTo("title");
+        assertThat(result.description()).isEqualTo("desc");
+        assertThat(result.contents()).isEqualTo("contents");
         verify(noteRepository, times(1)).save(existing);
     }
 
@@ -125,7 +125,7 @@ class NoteServiceTest {
                 eq(ResponseHandlerDto.class))
         ).thenReturn(ResponseEntity.ok(mockResponse));
         // expect
-        assertThatThrownBy(() -> noteService.updateNote("notfound", new NoteRequestVo("1", "t", "d", "c"),"Bearer test-token"))
+        assertThatThrownBy(() -> noteService.updateNote("notfound",  new NoteRequestVo("1", "title", "desc", "contents", null),"Bearer test-token"))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage(ExceptionStatus.NOTE_NOT_FOUND.getMessage());
     }
