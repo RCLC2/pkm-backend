@@ -20,7 +20,7 @@ public class NoteEntityTest{
                 .build();
 
         // when
-        note.update("1", "new title", "new desc", "new contents");
+        note.update("1", "new title", "new desc", "new contents", null);
 
         // then
         assertThat(note.getWorkspaceId()).isEqualTo("1");
