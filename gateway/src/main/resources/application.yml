@@ -21,7 +21,7 @@ spring:
         webflux:
           routes:
             - id: note_route
-              uri: ${NOTE_SERVICE_URI} # http://note-svc.rclc.svc.cluster.local:80
+              uri: ${NOTE_SERVICE_URI:http://note-service:8002} # http://note-svc.rclc.svc.cluster.local:80
               predicates:
                 - Path=/api/v1/notes/**
               filters:
@@ -34,7 +34,7 @@ spring:
                     fallbackUri: forward:/fallback
 
             - id: graph_route
-              uri: ${GRAPH_SERVICE_URI}
+              uri: ${GRAPH_SERVICE_URI:http://graph-service:8003}
               predicates:
                 - Path=/api/v1/graphs/**
               filters:
