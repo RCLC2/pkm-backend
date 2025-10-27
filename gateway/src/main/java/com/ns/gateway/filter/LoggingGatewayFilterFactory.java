@@ -16,7 +16,7 @@ import com.ns.gateway.LogState;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@Component("Logging")
+@Component
 public class LoggingGatewayFilterFactory extends AbstractGatewayFilterFactory<LoggingGatewayFilterFactory.Config> implements Ordered {
 
 

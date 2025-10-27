@@ -30,11 +30,11 @@ import static com.ns.gateway.utils.AuthErrorMessages.*;
 import static com.ns.gateway.utils.AuthLogMessages.*;
 
 @Slf4j
-@Component("JwtAuthentication")
-public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> implements Ordered {
+@Component
+public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config> implements Ordered {
     private final SecretKey signingKey;
 
-    public JwtAuthenticationFilter(@Value("${jwt.secret}") String secret) {
+    public JwtAuthenticationGatewayFilterFactory(@Value("${jwt.secret}") String secret) {
         super(Config.class);
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }

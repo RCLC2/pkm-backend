@@ -2,69 +2,84 @@ server:
   # 포트 번호를 환경 변수로 지정, 기본값은 8000
   port: ${GATEWAY_SERVER_PORT:8000}
 
+logging:
+  level:
+    root: INFO
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
-    health:
-      show-details: always
-      probes:
-        enabled: true
+        include: health,info,prometheus,gateway
+  server:
+    port: 8080
 
 spring:
   cloud:
     gateway:
-      routes:
-        - id: note_route
-          uri: ${NOTE_SERVICE_URI:http://note-svc.rclc.svc.cluster.local:80}
-          predicates:
-            - Path=/api/v1/notes/**
-          filters:
-            - StripPrefix=3
-            - Logging
-            - JwtAuthentication
-            - name: TimeLimiter
-              args:
-                name: noteServiceTimeLimiter
-            - name: CircuitBreaker
-              args:
-                name: noteServiceCircuitBreaker
-                fallbackUri: forward:/fallback
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://127.0.0.1:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+      server: 
+        webflux:
+          routes:
+            - id: note_route
+              uri: ${NOTE_SERVICE_URI:http://note-service:8002} # http://note-svc.rclc.svc.cluster.local:80
+              predicates:
+                - Path=/api/v1/notes/**
+              filters:
+                - StripPrefix=3
+                - Logging
+                - JwtAuthentication
+                - name: CircuitBreaker
+                  args:
+                    name: noteServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
-        - id: graph_route
-          uri: ${GRAPH_SERVICE_URI:http://graph-svc.rclc.svc.cluster.local:80}
-          predicates:
-            - Path=/api/v1/graphs/**
-          filters:
-            - StripPrefix=3
-            - Logging
-            - JwtAuthentication
-            - name: TimeLimiter
-              args:
-                name: default
-            - name: CircuitBreaker
-              args:
-                name: default
-                fallbackUri: forward:/fallback
+            - id: graph_route
+              uri: ${GRAPH_SERVICE_URI:http://graph-service:8003}
+              predicates:
+                - Path=/api/v1/graphs/**
+              filters:
+                - StripPrefix=3
+                - Logging
+                - JwtAuthentication
+                - name: CircuitBreaker
+                  args:
+                    name: default
+                    fallbackUri: forward:/fallback
 
-        - id: user_route
-          uri: ${USER_SERVICE_URI:http://user-svc.rclc.svc.cluster.local:80}
-          predicates:
-            - Path=/api/v1/users/**
-          filters:
-            - StripPrefix=3
-            - Logging
-            - name: JwtAuthentication
-              args:
-                publicPaths: /api/v1/users/auth/google/callback
-            - name: TimeLimiter
-              args:
-                name: default
-            - name: CircuitBreaker
-              args:
-                name: default
-                fallbackUri: forward:/fallback
+            - id: user_route
+              uri: ${USER_SERVICE_URI:http://user-service:8080}
+              predicates:
+                - Path=/api/v1/users/**
+              filters:
+                - StripPrefix=3
+                - Logging
+                - name: JwtAuthentication
+                  args:
+                    publicPaths:
+                      - /auth/google/callback
+                - name: CircuitBreaker
+                  args:
+                    name: default
+                    fallbackUri: forward:/fallback
 
 circuitbreaker:
   configs:
@@ -83,11 +98,3 @@ circuitbreaker:
       failureRateThreshold: ${CB_NOTE_FAILURE_RATE:60}
       slidingWindowSize: ${CB_NOTE_WINDOW_SIZE:20}
       waitDurationInOpenState: ${CB_NOTE_WAIT_DURATION:10s}
-
-timelimiter:
-  configs:
-    default:
-      timeoutDuration: ${TL_DEFAULT_TIMEOUT:2s}
-
-    noteServiceTimeLimiter:
-      timeoutDuration: ${TL_NOTE_TIMEOUT:3s}
