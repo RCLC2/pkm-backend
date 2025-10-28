@@ -7,8 +7,11 @@ logging:
     root: INFO
 
 management:
+  server:
+    port: 7999
   endpoints:
     web:
+      base-path: /actuator
       exposure:
         include: health,info,prometheus,gateway
   endpoint:
