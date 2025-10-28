@@ -37,16 +37,16 @@ public class AuthController {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", vo.refreshToken())
                 .httpOnly(true)
-                .secure(false) // true 변경 필요
+                .secure(true)
                 .path("/")
-                .sameSite("Lax") // Secure 변경 필ㅇㅅ
+                .sameSite("Strict")
                 .maxAge(Duration.ofDays(refreshExpDays))
                 .build();
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", vo.accessToken())
                 .httpOnly(false)
-                .secure(false) // true 변경
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("Strict")
                 .path("/")
                 .maxAge(Duration.ofMinutes(100))
                 .build();
@@ -86,7 +86,7 @@ public class AuthController {
 
         ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false) // true 변경
+                .secure(true)
                 .path("/")
                 .maxAge(0)
                 .build();
