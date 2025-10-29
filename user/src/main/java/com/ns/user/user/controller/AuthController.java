@@ -38,26 +38,10 @@ public class AuthController {
     public ResponseEntity<?> googleLogin(@RequestParam String code) {
         AuthVo vo = userService.loginWithGoogle(GoogleLoginVo.of(code));
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", vo.refreshToken())
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .sameSite("None")
-                .maxAge(Duration.ofDays(refreshExpDays))
-                .build();
-
-        ResponseCookie accessCookie = ResponseCookie.from("accessToken", vo.accessToken())
-                .httpOnly(false)
-                .secure(true)
-                .sameSite("None")
-                .path("/")
-                .maxAge(Duration.ofMinutes(100))
-                .build();
-
         HttpHeaders headers = new HttpHeaders();
-    
-        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+
+        headers.add("accessToken",vo.accessToken());
+        headers.add("refreshToken",vo.refreshToken());
         headers.setLocation(URI.create(frontEndRedirectUrl));
 
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
@@ -65,7 +49,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<GlobalResponseHandler<AuthResponseDto>> refresh(
-            @CookieValue("refreshToken") String refreshToken,
+            @RequestHeader("refreshToken") String refreshToken,
             @RequestBody RefreshTokenRequestDto request
     ) {
 
@@ -86,16 +70,6 @@ public class AuthController {
             @AuthenticationPrincipal CurrentUser currentUser) {
         userService.logout(currentUser.id());
 
-        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(0)
-                .build();
-
-        return GlobalResponseHandler.successWithCookie(
-                ResponseStatus.AUTH_LOGOUT_SUCCESS,
-                deleteCookie
-        );
+        return GlobalResponseHandler.success(ResponseStatus.AUTH_LOGOUT_SUCCESS, null);
     }
 }
