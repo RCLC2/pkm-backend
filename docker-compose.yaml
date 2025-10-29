@@ -95,9 +95,11 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CLIENT_REDIRECT_URI=http://localhost:8000/api/v1/users/auth/google/callback
       - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
       - YORKIE_JWT_SECRET=fwoifjowiejfoiawjefowejfoiwejfowiej
       - YORKIE_WEBHOOK_SECRET=fewoifjaowiejfoiawjefoiwejfoaiwejo
+      - FRONTEND_REDIRECT_URL=http://localhost:5173
     ports: ["8080:8080"]
     depends_on:
       mongodb:

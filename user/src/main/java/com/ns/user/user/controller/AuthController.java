@@ -3,7 +3,6 @@ package com.ns.user.user.controller;
 import com.ns.user.jwt.CurrentUser;
 import com.ns.user.response.GlobalResponseHandler;
 import com.ns.user.response.ResponseStatus;
-import com.ns.user.user.dto.request.GoogleLoginRequestDto;
 import com.ns.user.user.dto.request.RefreshTokenRequestDto;
 import com.ns.user.user.dto.response.AuthResponseDto;
 import com.ns.user.user.service.UserService;
@@ -12,11 +11,14 @@ import com.ns.user.user.vo.GoogleLoginVo;
 import com.ns.user.user.vo.RefreshTokenVo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.Duration;
 
 @RestController
@@ -29,11 +31,12 @@ public class AuthController {
     @Value("${jwt.refresh-exp-days}")
     private long refreshExpDays;
 
-    @PostMapping("/google/callback")
-    public ResponseEntity<GlobalResponseHandler<AuthResponseDto>> googleLogin(
-            @RequestBody GoogleLoginRequestDto request
-    ) {
-        AuthVo vo = userService.loginWithGoogle(GoogleLoginVo.of(request.getCode()));
+    @Value("${frontend.redirect.url}")
+    private String frontEndRedirectUrl;
+
+    @GetMapping("/google/callback")
+    public ResponseEntity<?> googleLogin(@RequestParam String code) {
+        AuthVo vo = userService.loginWithGoogle(GoogleLoginVo.of(code));
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", vo.refreshToken())
                 .httpOnly(true)
@@ -51,14 +54,13 @@ public class AuthController {
                 .maxAge(Duration.ofMinutes(100))
                 .build();
 
-        AuthResponseDto responseDto = new AuthResponseDto(vo.accessToken());
+        HttpHeaders headers = new HttpHeaders();
+    
+        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        headers.setLocation(URI.create(frontEndRedirectUrl));
 
-        return GlobalResponseHandler.successWithCookie(
-                ResponseStatus.AUTH_LOGIN_SUCCESS,
-                responseDto,
-                refreshCookie,
-                accessCookie
-        );
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     @PostMapping("/refresh")
