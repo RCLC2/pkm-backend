@@ -72,7 +72,7 @@ services:
       - NOTE_SERVICE_URI=http://note-service:8002
       - CB_DEFAULT_FAILURE_RATE=50
       - TL_DEFAULT_TIMEOUT=2s
-      - JWT_SECRET=fijofjweofjowejfoawijfwejfpijwepifjwpeijfpp
+      - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
     ports:
       - "8000:8000"
     depends_on:
@@ -95,9 +95,11 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CLIENT_REDIRECT_URI=http://localhost:8000/api/v1/users/auth/google/callback
       - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
       - YORKIE_JWT_SECRET=fwoifjowiejfoiawjefowejfoiwejfowiej
       - YORKIE_WEBHOOK_SECRET=fewoifjaowiejfoiawjefoiwejfoaiwejo
+      - FRONTEND_REDIRECT_URL=http://localhost:5173
     ports: ["8080:8080"]
     depends_on:
       mongodb:

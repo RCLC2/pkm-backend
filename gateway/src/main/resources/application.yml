@@ -51,7 +51,19 @@ spring:
                   args:
                     name: default
                     fallbackUri: forward:/fallback
-
+            - id: user_auth_route
+              uri: ${USER_SERVICE_URI:http://user-service:8080}
+              predicates:
+                - Path=/api/v1/users/auth/**
+              filters:
+                - StripPrefix=3
+                - Logging
+                - name: JwtAuthentication 
+                  args:
+                    publicPaths:
+                      - /auth/google/callback
+                      - /auth/refresh
+                      - /auth/logout
             - id: user_route
               uri: ${USER_SERVICE_URI:http://user-service:8080}
               predicates:
@@ -59,10 +71,7 @@ spring:
               filters:
                 - StripPrefix=3
                 - Logging
-                - name: JwtAuthentication
-                  args:
-                    publicPaths:
-                      - /auth/google/callback
+                - JwtAuthentication
                 - name: CircuitBreaker
                   args:
                     name: default

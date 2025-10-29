@@ -33,7 +33,7 @@ google:
   client:
     id: ${GOOGLE_CLIENT_ID}
     secret: ${GOOGLE_CLIENT_SECRET}
-    redirect-uri: http://localhost:5173/auth/google/callback
+    redirect-uri: ${GOOGLE_CLIENT_REDIRECT_URI}
   oauth:
     token-uri: https://oauth2.googleapis.com/token
     jwks-uri: https://www.googleapis.com/oauth2/v3/certs
@@ -44,3 +44,7 @@ yorkie:
     secret: ${YORKIE_JWT_SECRET}
   webhook:
     secret: ${YORKIE_WEBHOOK_SECRET}
+
+frontend:
+  redirect:
+    url: ${FRONTEND_REDIRECT_URL}
