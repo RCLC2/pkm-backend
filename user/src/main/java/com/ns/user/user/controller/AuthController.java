@@ -31,20 +31,17 @@ public class AuthController {
     @Value("${jwt.refresh-exp-days}")
     private long refreshExpDays;
 
-    @Value("${frontend.redirect.url}")
-    private String frontEndRedirectUrl;
 
     @GetMapping("/google/callback")
     public ResponseEntity<?> googleLogin(@RequestParam String code) {
         AuthVo vo = userService.loginWithGoogle(GoogleLoginVo.of(code));
 
         HttpHeaders headers = new HttpHeaders();
-
         headers.add("accessToken",vo.accessToken());
         headers.add("refreshToken",vo.refreshToken());
-        headers.setLocation(URI.create(frontEndRedirectUrl));
+        headers.add("Access-Control-Expose-Headers", "accessToken, refreshToken");
 
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        return new ResponseEntity<>(headers, HttpStatus.OK);
     }
 
     @PostMapping("/refresh")
