@@ -42,14 +42,14 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("Strict")
+                .sameSite("None")
                 .maxAge(Duration.ofDays(refreshExpDays))
                 .build();
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", vo.accessToken())
                 .httpOnly(false)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("None")
                 .path("/")
                 .maxAge(Duration.ofMinutes(100))
                 .build();
