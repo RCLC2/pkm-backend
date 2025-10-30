@@ -51,12 +51,6 @@ services:
     volumes:
       - esdata:/usr/share/elasticsearch/data
       - esplugs:/usr/share/elasticsearch/plugins
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"' || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 20s
     restart: always
     networks: [pkm-network]
 
@@ -108,12 +102,6 @@ services:
         condition: service_started
     restart: always
     networks: [pkm-network]
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
 
   graph-service:
     build:
@@ -149,15 +137,6 @@ services:
       - ELASTICSEARCH_ADDR=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=note
     ports: ["8004:8004"]
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8004/actuator/health | grep '\"status\":\"UP\"' || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 40s
     restart: always
     networks: [pkm-network]
 
@@ -174,9 +153,6 @@ services:
       - --admin-username=rclc
       - --admin-password=rclc
     ports: ["8002:8002"]
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
     restart: always
     networks: [pkm-network]
 
@@ -195,9 +171,3 @@ services:
         condition: service_healthy
     restart: always
     networks: [ pkm-network ]
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8085/ | head -1 >/dev/null || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 10s
