@@ -38,6 +38,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/lithammer/shortuuid/v4 v4.2.0 // indirect
+	github.com/mozillazg/go-unidecode v0.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mozillazg/go-unidecode"
 	"github.com/yorkie-team/yorkie/admin"
 	"github.com/yorkie-team/yorkie/api/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,11 +27,38 @@ type WorkspaceService struct {
 
 var nonSlugChar = regexp.MustCompile(`[^a-z0-9-]+`)
 
-func toSlug(s string) string {
+func generateProjectName(userID, title string) string {
+	const maxProjectNameLen = 30
+
+	userIDRunes := []rune(userID)
+	maxUserIDLen := maxProjectNameLen / 2
+	if len(userIDRunes) > maxUserIDLen {
+		userIDRunes = userIDRunes[:maxUserIDLen]
+	}
+	userIDPart := string(userIDRunes)
+
+	maxSlugLen := maxProjectNameLen - len([]rune(userIDPart)) - 1
+	if maxSlugLen < 5 {
+		maxSlugLen = 5
+	}
+
+	slug := toSlug(title, maxSlugLen)
+	return fmt.Sprintf("%s-%s", userIDPart, slug)
+}
+
+func toSlug(s string, maxLen int) string {
 	s = strings.ToLower(s)
+	s = unidecode.Unidecode(s)
 	s = nonSlugChar.ReplaceAllString(s, "-")
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
 	s = strings.Trim(s, "-")
-	s = strings.ReplaceAll(s, "--", "-")
+	runes := []rune(s)
+	if maxLen > 0 && len(runes) > maxLen {
+		s = string(runes[:maxLen])
+		s = strings.TrimRight(s, "-")
+	}
 	return s
 }
 
@@ -57,13 +85,11 @@ func (s *WorkspaceService) CreateWorkspace(ctx context.Context, title, wsType, u
 		return "", errors.New("yorkieAdmin client is not initialized")
 	}
 
-	slugTitle := toSlug(title)
-
-	if slugTitle == "" {
+	if title == "" {
 		return "", errors.New("workspace title is too generic or empty after slug transformation")
 	}
 
-	projectName := fmt.Sprintf("workspace-%s-%s", userID, slugTitle)
+	projectName := generateProjectName(userID, title)
 	project, err := s.yorkieAdmin.CreateProject(ctx, projectName)
 	if err != nil {
 		return "", fmt.Errorf("failed to create yorkie project: %w", err)
@@ -137,8 +163,7 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 		setMap["title"] = *title
 
 		if s.yorkieAdmin != nil {
-			slugTitle := toSlug(*title)
-			newProjectName := fmt.Sprintf("workspace-%s-%s", currentWs.UserID, slugTitle)
+			newProjectName := generateProjectName(currentWs.UserID, *title)
 
 			_, err = s.yorkieAdmin.UpdateProject(ctx, currentWs.YorkieProjectID, &types.UpdatableProjectFields{
 				Name: &newProjectName,
