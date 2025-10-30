@@ -15,16 +15,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.ns.gateway.utils.AuthErrorMessages.*;
 import static com.ns.gateway.utils.AuthLogMessages.*;
@@ -33,7 +32,8 @@ import static com.ns.gateway.utils.AuthLogMessages.*;
 @Component
 public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config> implements Ordered {
     private final SecretKey signingKey;
-
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+    
     public JwtAuthenticationGatewayFilterFactory(@Value("${jwt.secret}") String secret) {
         super(Config.class);
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -46,7 +46,7 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
 
     /* {
       "userId": "testuser123",
-      "roles": ["ROLE_USER", "ROLE_ADMIN"],
+      "role": "ROLE_USER",
       "exp": 1752307200,
       "iat": 1718006400
     } */
@@ -80,10 +80,10 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
                 Claims claims = validateJwt(jwt);
                 ServerHttpRequest mutatedRequest = retainHeader(request, claims);
 
-                String userId = claims.get("userId", String.class);
-                List<String> roles = extractRoles(claims);
+                String userId = claims.getSubject();
+                String role = claims.get("role", String.class);
 
-                log.info(AUTH_SUCCESS, userId, String.join(",", roles));
+                log.info(AUTH_SUCCESS, userId, role);
                 return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
             } catch (SignatureException e) {
@@ -133,10 +133,10 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
 
     /** 마이크로 서비스들은 헤더의 이 정보들만 가지고 사용자를 판단 */
     private ServerHttpRequest retainHeader(ServerHttpRequest request, Claims claims) {
-        String userId = claims.get("userId", String.class);
-        List<String> roles = extractRoles(claims);
+        String userId = claims.getSubject();
+        String role = claims.get("role", String.class);
 
-        if (userId == null) {
+        if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException(MISSING_USER_ID);
         }
 
@@ -144,23 +144,9 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
 
         return request.mutate()
                 .header("X-User-ID", userId)
-                .header("X-User-Roles", String.join(",", roles))
+                .header("X-User-Roles", role != null ? role : "")
                 .header("Authorization", originalAuthHeader)
                 .build();
-    }
-
-    private List<String> extractRoles(Claims claims) {
-        List<String> roles = new ArrayList<>();
-        Object rolesObject = claims.get("roles");
-        if (rolesObject instanceof List) {
-            roles = ((List<?>) rolesObject).stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .collect(Collectors.toList());
-        } else if (rolesObject instanceof String) {
-            roles = List.of(((String) rolesObject).split(","));
-        }
-        return roles;
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
@@ -181,6 +167,6 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
     }
 
     private boolean isPublicPath(String path, List<String> publicPaths) {
-        return publicPaths.stream().anyMatch(path::startsWith);
-    }
+    return publicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+}
 }
