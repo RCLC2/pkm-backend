@@ -1,4 +1,4 @@
-package services_test
+package services
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"graph/models"
-	"graph/services"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
@@ -57,7 +56,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	ctx := context.Background()
 
 	mt.Run("Error_InvalidInput", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 
 		_, err := service.ChangeWorkspaceStyle(ctx, "", userID, "zettel")
 		assert.Error(mt, err)
@@ -73,7 +72,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 	})
 
 	mt.Run("Error_GraphServiceNil", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 
 		mt.AddMockResponses(
 			bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}},
@@ -89,7 +88,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 			mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "update failed"}),
 		)
 
-		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil, "")
+		service := NewWorkspaceService(mt.DB, &GraphService{}, nil, "")
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 		assert.Error(mt, err)
 		assert.Contains(mt, err.Error(), "failed to update workspace type")
@@ -112,7 +111,7 @@ func TestWorkspaceService_ChangeWorkspaceStyle(t *testing.T) {
 		insertJobFailResponse := mtest.CreateWriteErrorsResponse(mtest.WriteError{Code: 11000, Message: "insert job failed"})
 		mt.AddMockResponses(findResponse, updateResponse, insertJobFailResponse)
 
-		service := services.NewWorkspaceService(mt.DB, &services.GraphService{}, nil, "")
+		service := NewWorkspaceService(mt.DB, &GraphService{}, nil, "")
 		_, err := service.ChangeWorkspaceStyle(ctx, workspaceID, userID, "zettel")
 
 		assert.Error(mt, err)
@@ -126,7 +125,7 @@ func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
 	const testUserID = "user-abc-123"
 
 	mt.Run("Success_FindsMultipleWorkspaces", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 		wsID1 := primitive.NewObjectID()
 		wsID2 := primitive.NewObjectID()
 		now := time.Now()
@@ -162,7 +161,7 @@ func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
 	})
 
 	mt.Run("Success_NoWorkspacesFound", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 		mt.AddMockResponses(mtest.CreateCursorResponse(0, "testdb.workspaces", mtest.FirstBatch))
 
 		workspaces, err := service.FindAllWorkspacesByUserID(ctx, "non-existent-user")
@@ -171,7 +170,7 @@ func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
 	})
 
 	mt.Run("Error_BlankUserID", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 		workspaces, err := service.FindAllWorkspacesByUserID(ctx, "")
 		assert.Error(mt, err)
 		assert.Nil(mt, workspaces)
@@ -179,7 +178,7 @@ func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
 	})
 
 	mt.Run("Error_MongoFindFails", func(mt *mtest.T) {
-		service := services.NewWorkspaceService(mt.DB, nil, nil, "")
+		service := NewWorkspaceService(mt.DB, nil, nil, "")
 		mt.AddMockResponses(mtest.CreateCommandErrorResponse(mtest.CommandError{
 			Code:    1,
 			Message: "internal server error",
@@ -190,4 +189,28 @@ func TestWorkspaceService_FindAllWorkspacesByUserID(t *testing.T) {
 		assert.Nil(mt, workspaces)
 		assert.Contains(mt, err.Error(), "failed to find workspaces")
 	})
+}
+
+func TestGenerateProjectName(t *testing.T) {
+	tests := []struct {
+		userID string
+		title  string
+	}{
+		{"google-sub-12345", "안녕하세요 월드"},
+		{"u1", "Hello World!"},
+		{"user12345678901234567888080808080808090", "테스트 프로젝트 이름이 길어요"},
+		{"abc", "Special & Characters ** Test"},
+	}
+
+	const maxLen = 30
+
+	for _, tt := range tests {
+		got := generateProjectName(tt.userID, tt.title)
+		if len([]rune(got)) > maxLen {
+			t.Errorf("generateProjectName(%q, %q) = %q; length %d exceeds %d",
+				tt.userID, tt.title, got, len([]rune(got)), maxLen)
+		} else {
+			t.Logf("PASS: %q + %q -> %q (len=%d)", tt.userID, tt.title, got, len([]rune(got)))
+		}
+	}
 }
