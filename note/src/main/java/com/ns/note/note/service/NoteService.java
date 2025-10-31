@@ -160,6 +160,8 @@ public class NoteService {
                     note.getContents(),
                     item.paraCategory()
             );
+
+            noteRepository.save(note);
         }
     }
 
