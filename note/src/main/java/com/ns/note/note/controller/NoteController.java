@@ -148,4 +148,8 @@ public class NoteController {
         return GlobalResponseHandler.success(ResponseStatus.NOTE_PARA_MAPPING_SUCCESS);
     }
 
+    @DeleteMapping("/delete/all/{workspaceId}") public ResponseEntity<GlobalResponseHandler<Void>> deleteAllNotesByWorkspaceId(@PathVariable String workspaceId) { 
+        noteService.deleteAllNotesByUserByWorkspaceId(workspaceId); 
+        return GlobalResponseHandler.success(ResponseStatus.NOTE_DELETE_SUCCESS); 
+        }
 }

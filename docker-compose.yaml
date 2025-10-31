@@ -95,11 +95,6 @@ services:
       - YORKIE_WEBHOOK_SECRET=fewoifjaowiejfoiawjefoiwejfoaiwejo
       - FRONTEND_REDIRECT_URL=http://localhost:5173
     ports: ["8080:8080"]
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_started
     restart: always
     networks: [pkm-network]
 
@@ -119,11 +114,6 @@ services:
       - TOPIC_SERVICE_URL=http://topic-service:8004
       - NOTE_SERVICE_URL=http://note-service:8002
     ports: ["8003:8003"]
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      topic-service:
-        condition: service_started
     restart: always
     networks: [pkm-network]
 
@@ -150,6 +140,7 @@ services:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=note
       - USER_SERVICE_URL=http://user-service:8080 # User 서비스 내부 주소
+      - GRAPH_SERVICE_URL=http://graph-service:8003
       - --admin-username=rclc
       - --admin-password=rclc
     ports: ["8002:8002"]
@@ -164,10 +155,5 @@ services:
       - "8085:8085"
     volumes:
       - ./yorkie.yml:/etc/yorkie.yml:ro
-    depends_on:
-      user-service:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
     restart: always
     networks: [ pkm-network ]
