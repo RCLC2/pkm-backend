@@ -1,4 +1,4 @@
 package com.ns.user.user.vo;
 
-public record AuthVo(String accessToken, String refreshToken) {}
+public record AuthVo(String userId,String accessToken, String refreshToken) {}
 

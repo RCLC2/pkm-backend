@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -41,7 +42,9 @@ public class AuthController {
         headers.add("refreshToken",vo.refreshToken());
         headers.add("Access-Control-Expose-Headers", "accessToken, refreshToken");
 
-        return new ResponseEntity<>(headers, HttpStatus.OK);
+        Map<String, String> body = Map.of("userId", vo.userId());
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @PostMapping("/refresh")
