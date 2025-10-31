@@ -54,13 +54,11 @@ public interface NoteRepository extends ElasticsearchRepository<NoteEntity, Stri
 
     @Query("""
 {
-  "query": {
-    "bool": {
-      "filter": [
-        { "term": { "workspaceId.keyword": "?0" } },
-        { "bool": { "must_not": { "exists": { "field": "deletedAt" } } } }
-      ]
-    }
+  "bool": {
+    "filter": [
+      { "term": { "workspaceId.keyword": "?0" } },
+      { "bool": { "must_not": { "exists": { "field": "deletedAt" } } } }
+    ]
   }
 }
 """)
