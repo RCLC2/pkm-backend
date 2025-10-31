@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -30,7 +29,7 @@ var noteUrl = os.Getenv("NOTE_SERVICE_URL")
 
 type GraphService struct {
 	db                    *mongo.Database
-	FetchSimilarByID      func(ctx context.Context, docID string, topN int) ([]string, error)
+	FetchSimilarByID      func(ctx context.Context, docID string) ([]string, error)
 	FetchSimilarByContent func(ctx context.Context, content string, topN int) ([]string, error)
 	FetchDocumentIDs      func(ctx context.Context, workspaceID string) ([]string, error)
 }
@@ -105,7 +104,7 @@ func fetchSimilarDocsByContentHTTP(ctx context.Context, content string, topN int
 	return doTopicServiceRequest(ctx, req)
 }
 
-func fetchSimilarDocsByIDHTTP(ctx context.Context, docID string, topN int) ([]string, error) {
+func fetchSimilarDocsByIDHTTP(ctx context.Context, docID string) ([]string, error) {
 	u, err := url.Parse(topicUrl + "/find-similar/by-id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse topic service URL: %w", err)
@@ -149,15 +148,7 @@ func doTopicServiceRequest(ctx context.Context, req *http.Request) ([]string, er
 	return result.IDs, nil
 }
 
-func objectIDFromHex(idStr string, fieldName string) (primitive.ObjectID, error) {
-	objID, err := primitive.ObjectIDFromHex(idStr)
-	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("invalid %s ID: %w", fieldName, err)
-	}
-	return objID, nil
-}
-
-func makeConnection(sourceID, targetID primitive.ObjectID, workspaceID, status string) models.GraphConnection {
+func makeConnection(sourceID, targetID, workspaceID, status string) models.GraphConnection {
 	now := time.Now()
 	return models.GraphConnection{
 		SourceID:    sourceID,
@@ -169,13 +160,8 @@ func makeConnection(sourceID, targetID primitive.ObjectID, workspaceID, status s
 	}
 }
 
-func (s *GraphService) NoteCreated(ctx context.Context, newDocID string, workspaceID string) ([]models.GraphConnection, error) {
-	sourceID, err := objectIDFromHex(newDocID, "new document")
-	if err != nil {
-		return nil, err
-	}
-
-	similarIDs, err := s.FetchSimilarByID(ctx, newDocID, 5)
+func (s *GraphService) NoteCreated(ctx context.Context, sourceID string, workspaceID string) ([]models.GraphConnection, error) {
+	similarIDs, err := s.FetchSimilarByID(ctx, sourceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch similar docs by ID: %w", err)
 	}
@@ -183,13 +169,8 @@ func (s *GraphService) NoteCreated(ctx context.Context, newDocID string, workspa
 	var connections []models.GraphConnection
 	connColl := s.db.Collection("graph_connections")
 
-	for _, targetIDStr := range similarIDs {
-		if newDocID == targetIDStr {
-			continue
-		}
-
-		targetID, err := objectIDFromHex(targetIDStr, "target document")
-		if err != nil {
+	for _, targetID := range similarIDs {
+		if sourceID == targetID {
 			continue
 		}
 
@@ -208,18 +189,13 @@ func (s *GraphService) NoteCreated(ctx context.Context, newDocID string, workspa
 }
 
 func (s *GraphService) NoteDeleted(ctx context.Context, docID string, workspaceID string) error {
-	objID, err := objectIDFromHex(docID, "document")
-	if err != nil {
-		return err
-	}
-
-	_, err = s.db.Collection("graph_connections").DeleteMany(
+	_, err := s.db.Collection("graph_connections").DeleteMany(
 		ctx,
 		bson.M{
 			"workspace_id": workspaceID,
 			"$or": []bson.M{
-				{"source_id": objID},
-				{"target_id": objID},
+				{"source_id": docID},
+				{"target_id": docID},
 			}},
 	)
 	if err != nil {
@@ -229,39 +205,21 @@ func (s *GraphService) NoteDeleted(ctx context.Context, docID string, workspaceI
 }
 
 func (s *GraphService) ConfirmGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
-	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
-	if err != nil {
-		return fmt.Errorf("invalid source ID: %w", err)
-	}
-	targetObjID, err := primitive.ObjectIDFromHex(targetID)
-	if err != nil {
-		return fmt.Errorf("invalid target ID: %w", err)
-	}
-
-	_, err = s.db.Collection("graph_connections").UpdateOne(
+	_, err := s.db.Collection("graph_connections").UpdateOne(
 		ctx,
-		bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID},
+		bson.M{"source_id": sourceID, "target_id": targetID, "workspace_id": workspaceID},
 		bson.M{"$set": bson.M{"status": StatusConfirmed, "updated_at": time.Now()}},
 	)
 	return err
 }
 
 func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, targetID string, workspaceID string) error {
-	sourceObjID, err := primitive.ObjectIDFromHex(sourceID)
-	if err != nil {
-		return fmt.Errorf("invalid source ID: %w", err)
-	}
-	targetObjID, err := primitive.ObjectIDFromHex(targetID)
-	if err != nil {
-		return fmt.Errorf("invalid target ID: %w", err)
-	}
-
-	newConn := makeConnection(sourceObjID, targetObjID, workspaceID, StatusPending)
+	newConn := makeConnection(sourceID, targetID, workspaceID, StatusPending)
 	opts := options.Update().SetUpsert(true)
-	filter := bson.M{"source_id": sourceObjID, "target_id": targetObjID, "workspace_id": workspaceID}
+	filter := bson.M{"source_id": sourceID, "target_id": targetID, "workspace_id": workspaceID}
 	update := bson.M{"$set": newConn}
 
-	_, err = s.db.Collection("graph_connections").UpdateOne(
+	_, err := s.db.Collection("graph_connections").UpdateOne(
 		ctx,
 		filter,
 		update,
@@ -293,34 +251,23 @@ func (s *GraphService) AutoConnectWorkspace(ctx context.Context, workspaceID str
 
 	for i, docID := range docIDs {
 		log.Printf("[AutoConnect %s/%d] Processing document ID: %s", workspaceID, i+1, docID)
-		sourceID, err := objectIDFromHex(docID, "source document")
-		if err != nil {
-			log.Printf("[AutoConnect %s] Warning: Invalid document ID %s, skipping.", workspaceID, docID)
-			continue
-		}
 
-		similarIDs, err := s.FetchSimilarByID(ctx, docID, 5)
+		similarIDs, err := s.FetchSimilarByID(ctx, docID)
 		if err != nil {
 			log.Printf("[AutoConnect %s] Warning: Failed to fetch similar docs for %s: %v, skipping.", workspaceID, docID, err)
 			continue
 		}
 
 		log.Printf("[AutoConnect %s] Found %d similar IDs for %s.", workspaceID, len(similarIDs), docID)
-		for _, targetIDStr := range similarIDs {
-			if docID == targetIDStr {
+		for _, targetID := range similarIDs {
+			if docID == targetID {
 				continue
 			}
 
-			targetID, err := objectIDFromHex(targetIDStr, "target document")
-			if err != nil {
-				log.Printf("[AutoConnect %s] Warning: Invalid target ID %s, skipping connection.", workspaceID, targetIDStr)
-				continue
-			}
-
-			conn := makeConnection(sourceID, targetID, workspaceID, StatusPending)
+			conn := makeConnection(docID, targetID, workspaceID, StatusPending)
 			_, _ = connColl.UpdateOne(
 				ctx,
-				bson.M{"source_id": sourceID, "target_id": targetID},
+				bson.M{"source_id": docID, "target_id": targetID},
 				bson.M{"$set": conn},
 				options.Update().SetUpsert(true),
 			)
@@ -379,8 +326,8 @@ func (s *GraphService) GetWorkspaceGraphResponse(ctx context.Context, workspaceI
 
 	nodesMap := make(map[string]models.GraphNode)
 	for _, conn := range connections {
-		nodesMap[conn.SourceID.Hex()] = models.GraphNode{ID: conn.SourceID.Hex(), Title: ""}
-		nodesMap[conn.TargetID.Hex()] = models.GraphNode{ID: conn.TargetID.Hex(), Title: ""}
+		nodesMap[conn.SourceID] = models.GraphNode{ID: conn.SourceID, Title: ""}
+		nodesMap[conn.TargetID] = models.GraphNode{ID: conn.TargetID, Title: ""}
 	}
 
 	nodes := make([]models.GraphNode, 0, len(nodesMap))
@@ -391,8 +338,8 @@ func (s *GraphService) GetWorkspaceGraphResponse(ctx context.Context, workspaceI
 	edges := make([]models.GraphEdge, len(connections))
 	for i, conn := range connections {
 		edges[i] = models.GraphEdge{
-			SourceID: conn.SourceID.Hex(),
-			TargetID: conn.TargetID.Hex(),
+			SourceID: conn.SourceID,
+			TargetID: conn.TargetID,
 			Status:   conn.Status,
 		}
 	}

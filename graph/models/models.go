@@ -36,8 +36,8 @@ type WorkspaceJob struct {
 
 type GraphConnection struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	SourceID    primitive.ObjectID `bson:"source_id" json:"sourceId"`
-	TargetID    primitive.ObjectID `bson:"target_id" json:"targetId"`
+	SourceID    string             `bson:"source_id" json:"sourceId"`
+	TargetID    string             `bson:"target_id" json:"targetId"`
 	Status      string             `bson:"status" json:"status"` // "pending", "confirmed", "edited"
 	WorkspaceID string             `bson:"workspace_id" json:"workspaceId"`
 	CreatedAt   time.Time          `bson:"created_at" json:"createdAt"`

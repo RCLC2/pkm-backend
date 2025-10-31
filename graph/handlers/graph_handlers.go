@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"graph/services"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -89,14 +90,44 @@ func (h *GraphConnectionHandler) DeleteNoteGraph(c *gin.Context) {
 		WorkspaceID string `json:"workspaceId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[DeleteNoteGraph] Bad request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := h.service.NoteDeleted(c.Request.Context(), req.NoteID, req.WorkspaceID); err != nil {
+		log.Printf("[DeleteNoteGraph] Failed to delete graph connections: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to delete graph connections: %v", err)})
 		return
 	}
 
+	log.Printf("[DeleteNoteGraph] Successfully deleted graph connections for note %s", req.NoteID)
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+// ClearPendingConnections
+// @Summary 워크스페이스 내 모든 pending 연결 삭제
+// @Description 워크스페이스 내 상태가 'pending'인 모든 그래프 연결을 삭제합니다.
+// @Tags Graph Connection
+// @Accept json
+// @Produce json
+// @Param workspaceId path string true "워크스페이스 ID"
+// @Success 200 {object} object{deletedCount=int} "삭제된 pending 연결 수"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 pending 연결 삭제 실패"
+// @Router /workspaces/{workspaceId}/clear-pending [post]
+func (h *GraphConnectionHandler) ClearPendingConnections(c *gin.Context) {
+	workspaceID := c.Param("workspaceId")
+	if workspaceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "workspaceId is required"})
+		return
+	}
+
+	deletedCount, err := h.service.ClearPendingConnections(c.Request.Context(), workspaceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to clear pending connections: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"deletedCount": deletedCount})
 }

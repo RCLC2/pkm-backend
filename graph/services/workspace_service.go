@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"graph/models"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -209,12 +210,34 @@ func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, use
 		return fmt.Errorf("invalid workspaceID: %w", err)
 	}
 
-	// 워크스페이스, 연결 삭제
+	req, err := http.NewRequest(
+		"DELETE",
+		fmt.Sprintf("%s/note/delete/all/%s", noteUrl, workspaceID),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to call note service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("note service returned non-200 status: %d", resp.StatusCode)
+	}
+
+	// 워크스페이스 연결 삭제
 	if _, err := s.db.Collection("connections").DeleteMany(ctx, bson.M{"workspace_id": workspaceID}); err != nil {
 		return err
 	}
 	res, err := s.db.Collection("workspaces").DeleteOne(ctx, bson.M{"_id": objID, "user_id": userID})
-	// todo. 노트도 삭제해야해요 ㅜㅜ
+
 	if err != nil {
 		return err
 	}
