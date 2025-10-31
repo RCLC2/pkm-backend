@@ -492,6 +492,65 @@
                 }
             }
         },
+        "/workspaces/{workspaceId}/clear-pending": {
+            "post": {
+                "description": "워크스페이스 내 상태가 'pending'인 모든 그래프 연결을 삭제합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph Connection"
+                ],
+                "summary": "워크스페이스 내 모든 pending 연결 삭제",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "워크스페이스 ID",
+                        "name": "workspaceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "삭제된 pending 연결 수",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "deletedCount": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "잘못된 요청 형식",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "서버 내부 오류로 pending 연결 삭제 실패",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/workspaces/{workspaceId}/confirm-all": {
             "post": {
                 "description": "특정 워크스페이스 내의 모든 'pending' 또는 'edit' 상태의 그래프 연결을 'confirmed' 상태로 일괄 변경합니다.",

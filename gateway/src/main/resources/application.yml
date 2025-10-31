@@ -38,7 +38,6 @@ spring:
                   args:
                     name: noteServiceCircuitBreaker
                     fallbackUri: forward:/fallback
-
             - id: graph_route
               uri: ${GRAPH_SERVICE_URI:http://graph-service:8003}
               predicates:
@@ -71,6 +70,17 @@ spring:
                 - StripPrefix=3
                 - Logging
                 - JwtAuthentication
+                - name: CircuitBreaker
+                  args:
+                    name: default
+                    fallbackUri: forward:/fallback
+            - id: topic_route
+              uri: ${TOPIC_SERVICE_URI:http://topic-service:8004}
+              predicates:
+                - Path=/api/v1/topics/**
+              filters:
+                - StripPrefix=3
+                - Logging
                 - name: CircuitBreaker
                   args:
                     name: default

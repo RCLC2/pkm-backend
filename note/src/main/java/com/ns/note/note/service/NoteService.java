@@ -13,10 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +20,10 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.ns.note.exception.ExceptionStatus.*;
@@ -40,6 +38,9 @@ public class NoteService {
 
     @Value("${services.user.base-url}")
     private String userBaseUrl;
+
+    @Value("${services.graph.base-url}")
+    private String graphBaseUrl;
 
     public NoteResponseVo createNewNote(NoteRequestVo vo, String authorization) {
         NoteEntity entity = NoteEntity.builder()
@@ -99,7 +100,10 @@ public class NoteService {
         }
 
         NoteEntity note = getActiveNoteById(id);
-
+        boolean graphDeleted = deleteNoteGraphLinks(note.getId(), note.getWorkspaceId());
+        if (!graphDeleted) {
+            throw new ServiceException(ExceptionStatus.GENERAL_INTERNAL_SERVER_ERROR);
+        }
         note.softDelete();
 
         noteRepository.save(note);
@@ -132,7 +136,7 @@ public class NoteService {
     }
 
     @Transactional
-    public void updateParaMappings(NoteParaMappingVo vo) {
+    public void updateParaMappings(NoteParaMappingVo vo, String userId) {
         String workspaceId = vo.workspaceId();
 
         List<String> allNoteIds = noteRepository.findAllIdsByWorkspaceIdAndDeletedAtIsNull(workspaceId)
@@ -163,7 +167,33 @@ public class NoteService {
 
             noteRepository.save(note);
         }
+
+        String para = "para";
+        notifyGraphParaSync(vo.workspaceId(), userId, para);
     }
+
+    private void notifyGraphParaSync(String workspaceId, String userId, String newStyle) {
+        String url = graphBaseUrl + "/workspaces/" + workspaceId + "/style";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-User-ID", userId);
+
+        Map<String, String> body = Map.of("newStyle", newStyle);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+            log.info("Workspace style sync request sent: workspaceId={}, newStyle={}", workspaceId, newStyle);
+
+        } catch (HttpStatusCodeException e) {
+            log.warn("Workspace style sync failed for workspace {}: {}", workspaceId, e.getResponseBodyAsString());
+
+        } catch (ResourceAccessException e) {
+            log.error("Workspace service not reachable for workspaceId={}", workspaceId);
+        }
+    }
+
 
     // 삭제되지 않은 노트 조회
     private NoteEntity getActiveNoteById(String id) {
@@ -231,4 +261,46 @@ public class NoteService {
 
     }
 
+    public void deleteAllNotesByUserByWorkspaceId(String workspaceId) {
+        List<NoteEntity> workspaceNotes = noteRepository.findAllIdsByWorkspaceIdAndDeletedAtIsNull(workspaceId);
+
+        for (NoteEntity note : workspaceNotes) {
+            try {
+                deleteNoteGraphLinks(note.getId(), workspaceId);
+            } catch (Exception e) {
+                log.warn("Failed to delete graph links for note: {}", note.getId(), e);
+            }
+            note.softDelete();
+        }
+
+        noteRepository.saveAll(workspaceNotes);
+    }
+    
+   private boolean deleteNoteGraphLinks(String noteId, String workspaceId) {
+       String url = graphBaseUrl + "/connections/note-deleted";
+
+       Map<String, String> requestBody = new HashMap<>();
+       requestBody.put("noteId", noteId);
+       requestBody.put("workspaceId", workspaceId);
+
+       try {
+           HttpHeaders headers = new HttpHeaders();
+           headers.setContentType(MediaType.APPLICATION_JSON);
+           HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+           ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+
+           if (response.getStatusCode().is2xxSuccessful()) {
+               Object status = response.getBody() != null ? response.getBody().get("status") : null;
+               return "success".equals(status);
+           }
+
+           return false;
+       } catch (HttpStatusCodeException e) {
+           log.warn("failed to deleteNoteGraphLinks {}: {}", noteId, e.getStatusCode());
+           return false;
+       } catch (ResourceAccessException e) {
+           log.error("failed to deleteNoteGraphLinks {}", noteId);
+           return false;
+       }
+   }
 }
