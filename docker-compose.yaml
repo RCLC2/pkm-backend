@@ -64,6 +64,7 @@ services:
       - USER_SERVICE_URI=http://user-service:8080
       - GRAPH_SERVICE_URI=http://graph-service:8003
       - NOTE_SERVICE_URI=http://note-service:8002
+      - TOPIC_SERVICE_URI=http://topic-service:8004
       - CB_DEFAULT_FAILURE_RATE=50
       - TL_DEFAULT_TIMEOUT=2s
       - JWT_SECRET=fjwoefjowijfowjfoiawjefojaweoffoifjwoeifjowiejfoiw
