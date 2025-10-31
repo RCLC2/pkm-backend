@@ -54,7 +54,6 @@ public interface NoteRepository extends ElasticsearchRepository<NoteEntity, Stri
 
     @Query("""
 {
-  "_source": false,
   "query": {
     "bool": {
       "filter": [
