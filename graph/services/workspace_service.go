@@ -204,7 +204,7 @@ func (s *WorkspaceService) UpdateWorkspace(ctx context.Context, workspaceID, use
 	return msg, nil
 }
 
-func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, userID string) error {
+func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, userID, jwt string) error {
 	objID, err := primitive.ObjectIDFromHex(workspaceID)
 	if err != nil {
 		return fmt.Errorf("invalid workspaceID: %w", err)
@@ -218,8 +218,11 @@ func (s *WorkspaceService) DeleteWorkspace(ctx context.Context, workspaceID, use
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwt))
+
 	req.Header.Set("Content-Type", "application/json")
+	if jwt != "" {
+		req.Header.Set("Authorization", jwt)
+	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)

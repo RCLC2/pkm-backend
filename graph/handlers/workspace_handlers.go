@@ -109,8 +109,13 @@ func (h *WorkspaceGraphHandler) DeleteWorkspace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "X-User-ID header is missing"})
 		return
 	}
+	jwt := c.GetHeader("Authorization")
+	if jwt == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization header is missing"})
+		return
+	}
 
-	if err := h.ws.DeleteWorkspace(c.Request.Context(), workspaceID, userID); err != nil {
+	if err := h.ws.DeleteWorkspace(c.Request.Context(), workspaceID, userID, jwt); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete workspace: %s", err.Error())})
 		return
 	}

@@ -141,9 +141,10 @@ public class NoteController {
 
     @PostMapping("/para-mapping")
     public ResponseEntity<GlobalResponseHandler<Void>> updateParaMapping(
-            @RequestBody NoteParaMappingRequestDto request) {
+            @RequestBody NoteParaMappingRequestDto request,
+            @RequestHeader("X-User-ID") String userId) {
 
-        noteService.updateParaMappings(request.toVo());
+        noteService.updateParaMappings(request.toVo(), userId);
 
         return GlobalResponseHandler.success(ResponseStatus.NOTE_PARA_MAPPING_SUCCESS);
     }
