@@ -10,7 +10,8 @@ server:
 services:
   user:
     base-url: ${USER_SERVICE_URL:http://user-service:8080}
-
+  graph:
+    base-url: ${USER_SERVICE_URL:http://graph-service:8003}
 management:
   endpoints:
     web:
