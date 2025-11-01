@@ -73,6 +73,34 @@ func (h *GraphConnectionHandler) EditGraphConnection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// DeleteGraphConnection
+// @Summary 그래프 연결 삭제
+// @Description 문서 간의 그래프 연결을 삭제합니다.
+// @Tags Graph Connection
+// @Accept json
+// @Produce json
+// @Param request body object{sourceId=string,targetId=string,workspaceId=string} true "삭제할 Source 문서 ID 및 Target 문서 ID"
+// @Success 200 {object} object{status=string} "연결 삭제 성공"
+// @Failure 400 {object} object{error=string} "잘못된 요청 형식"
+// @Failure 500 {object} object{error=string} "서버 내부 오류로 연결 삭제 실패"
+// @Router /connections/delete [post]
+func (h *GraphConnectionHandler) DeleteGraphConnection(c *gin.Context) {
+	var req struct {
+		SourceID    string `json:"sourceId" binding:"required"`
+		TargetID    string `json:"targetId" binding:"required"`
+		WorkspaceID string `json:"workspaceId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.service.DeleteGraphConnection(c.Request.Context(), req.SourceID, req.TargetID, req.WorkspaceID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete connection: %s", err.Error())})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
 // DeleteNoteGraph
 // @Summary 노트 삭제 이벤트 처리
 // @Description 외부 노트 서비스에서 노트 삭제 시 관련 그래프 연결을 모두 삭제합니다.
