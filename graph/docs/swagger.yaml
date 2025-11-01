@@ -47,6 +47,52 @@ paths:
       summary: 그래프 연결 확정
       tags:
       - Graph Connection
+  /connections/delete:
+    post:
+      consumes:
+      - application/json
+      description: 문서 간의 그래프 연결을 삭제합니다.
+      parameters:
+      - description: 삭제할 Source 문서 ID 및 Target 문서 ID
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            sourceId:
+              type: string
+            targetId:
+              type: string
+            workspaceId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 연결 삭제 성공
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+        "400":
+          description: 잘못된 요청 형식
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: 서버 내부 오류로 연결 삭제 실패
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: 그래프 연결 삭제
+      tags:
+      - Graph Connection
   /connections/edit:
     post:
       consumes:

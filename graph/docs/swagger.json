@@ -76,6 +76,78 @@
                 }
             }
         },
+        "/connections/delete": {
+            "post": {
+                "description": "문서 간의 그래프 연결을 삭제합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Graph Connection"
+                ],
+                "summary": "그래프 연결 삭제",
+                "parameters": [
+                    {
+                        "description": "삭제할 Source 문서 ID 및 Target 문서 ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "sourceId": {
+                                    "type": "string"
+                                },
+                                "targetId": {
+                                    "type": "string"
+                                },
+                                "workspaceId": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "연결 삭제 성공",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "잘못된 요청 형식",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "서버 내부 오류로 연결 삭제 실패",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/connections/edit": {
             "post": {
                 "description": "사용자가 문서 간의 연결을 수동으로 편집했음을 표시하기 위해 연결 상태를 'edited'로 변경합니다.",
