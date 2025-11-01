@@ -228,6 +228,22 @@ func (s *GraphService) EditGraphConnection(ctx context.Context, sourceID, target
 	return err
 }
 
+func (s *GraphService) DeleteGraphConnection(ctx context.Context, sourceID, targetID, workspaceID string) error {
+	result, err := s.db.Collection("graph_connections").DeleteOne(
+		ctx, bson.M{"workspace_id": workspaceID, "source_id": sourceID, "target_id": targetID},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to delete graph connection: %w", err)
+	}
+
+	if result.DeletedCount == 0 {
+		log.Printf("[DeleteGraphConnection] No connection found for (%s -> %s) in WS %s", sourceID, targetID, workspaceID)
+	}
+
+	log.Printf("[DeleteGraphConnection] Deleted (%s -> %s) from WS %s", sourceID, targetID, workspaceID)
+	return nil
+}
+
 func (s *GraphService) ConfirmAllConnections(ctx context.Context, workspaceID string) error {
 	_, err := s.db.Collection("graph_connections").UpdateMany(
 		ctx,
