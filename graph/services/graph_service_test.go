@@ -173,6 +173,58 @@ func TestGraphService_ConfirmGraphConnection(t *testing.T) {
 	})
 }
 
+func TestGraphService_DeleteGraphConnection(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	sourceID := "6517a2624a081a27e7d0f93a"
+	targetID := "6517a2624a081a27e7d0f93b"
+	workspaceID := "workspace1"
+	ctx := context.Background()
+
+	mt.Run("Success_DeletesSingleConnection", func(mt *mtest.T) {
+		service := services.NewGraphService(mt.DB)
+
+		mt.AddMockResponses(
+			mtest.CreateSuccessResponse(
+				bson.E{Key: "ok", Value: 1},
+				bson.E{Key: "n", Value: 1},
+				bson.E{Key: "deletedCount", Value: 1},
+			),
+		)
+
+		err := service.DeleteGraphConnection(ctx, sourceID, targetID, workspaceID)
+		assert.NoError(t, err)
+	})
+
+	mt.Run("Success_NoConnectionFound", func(mt *mtest.T) {
+		service := services.NewGraphService(mt.DB)
+
+		mt.AddMockResponses(
+			mtest.CreateSuccessResponse(
+				bson.E{Key: "ok", Value: 1},
+				bson.E{Key: "n", Value: 0},
+				bson.E{Key: "deletedCount", Value: 0},
+			),
+		)
+
+		err := service.DeleteGraphConnection(ctx, sourceID, targetID, workspaceID)
+		assert.NoError(t, err, "no data but should not return error")
+	})
+
+	mt.Run("Error_DeleteOperationFailed", func(mt *mtest.T) {
+		service := services.NewGraphService(mt.DB)
+		mt.AddMockResponses(
+			mtest.CreateCommandErrorResponse(mtest.CommandError{
+				Message: "delete failed",
+				Code:    11000,
+			}),
+		)
+
+		err := service.DeleteGraphConnection(ctx, sourceID, targetID, workspaceID)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to delete graph connection")
+	})
+}
+
 func TestGraphService_ConfirmAllConnections(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	workspaceID := "6517a2624a081a27e7d0f91e"

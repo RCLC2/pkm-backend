@@ -20,6 +20,7 @@ func NewServer(gs *services.GraphService, ws *services.WorkspaceService) *gin.En
 	// 그래프 연결 관리
 	router.POST("/connections/confirm", graphHandler.ConfirmGraphConnection)
 	router.POST("/connections/edit", graphHandler.EditGraphConnection)
+	router.POST("/connections/delete", graphHandler.DeleteGraphConnection)
 	router.POST("/connections/note-deleted", graphHandler.DeleteNoteGraph)
 	router.POST("/workspaces/:workspaceId/clear-pending", graphHandler.ClearPendingConnections)
 
