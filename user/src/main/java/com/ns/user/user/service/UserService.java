@@ -53,7 +53,7 @@ public class UserService {
 
         redisTemplate.opsForValue().set(REFRESH_PREFIX + user.getId(), refreshToken, Duration.ofDays(refreshExpDays));
 
-        return new AuthVo(accessToken, refreshToken);
+        return new AuthVo(user.getId(), accessToken, refreshToken);
     }
 
     public AuthVo refreshAccessToken(RefreshTokenVo refreshVo) {
@@ -70,7 +70,7 @@ public class UserService {
         String role = jwtProvider.getRole(refreshVo.refreshToken());
 
         String newAccessToken = jwtProvider.generateAccessToken(refreshVo.userId(), email, name, role);
-        return new AuthVo(newAccessToken, null);
+        return new AuthVo(refreshVo.userId(), newAccessToken, null);
     }
 
     public void logout(String userId) {
